@@ -103,7 +103,7 @@
                 {
                   "id": "ch1_xray-properties_X线表现",
                   "title": "X线表现",
-                  "content": "X线摄影的基础。（4）生物效应（Biological effect）：X线能使机体和细胞发生生物学改变，是临床放射治疗学的基础，也是X线防护的原因。",
+                  "content": "",
                   "subtopics": [],
                   "flashcards": [],
                   "quiz": []
@@ -2299,15 +2299,20 @@
                 {
                   "id": "ch3_metastatic-lung-cancer_CT表现",
                   "title": "CT表现",
-                  "content": "CT表现：孤立结节状（支气管气像、空泡征）、双肺弥漫结节、大片肺炎样实变（支气管气像，",
+                  "content": "中心型肺癌：支气管壁增厚、管腔狭窄或截断，肺门肿块不均匀强化，肺门及纵隔淋巴结肿大。周围型肺癌：结节边缘分叶及毛刺更清晰，可见空泡征、支气管充气征、胸膜凹陷征，增强后不均匀强化。",
                   "subtopics": [],
-                  "flashcards": [],
+                  "flashcards": [
+                    {
+                      "front": "周围型肺癌CT上的空泡征是什么？",
+                      "back": "结节内小圆形含气透亮区，提示肿瘤内残存正常肺组织或小支气管扩张"
+                    }
+                  ],
                   "quiz": []
                 },
                 {
                   "id": "ch3_metastatic-lung-cancer_DSA表现",
                   "title": "DSA表现",
-                  "content": "血管造影征）。",
+                  "content": "",
                   "subtopics": [],
                   "flashcards": [],
                   "quiz": []
@@ -2467,7 +2472,7 @@
             {
               "id": "ch3_cv-methods_超声表现",
               "title": "超声表现",
-              "content": "超声检查和核医学检查。",
+              "content": "",
               "subtopics": [],
               "flashcards": [],
               "quiz": []
@@ -3236,7 +3241,7 @@
                 {
                   "id": "ch4_liver-ct-methods_CT表现",
                   "title": "CT表现",
-                  "content": "CT检查包括平扫、",
+                  "content": "",
                   "subtopics": [],
                   "flashcards": [],
                   "quiz": []
@@ -3413,7 +3418,12 @@
                   "title": "X线表现",
                   "content": "X线表现：腔外龛影或钡斑、溃口周围水肿带（黏膜线、项圈征、狭颈征）、黏膜纠集、胃变形。胃癌：好发于胃窦，腺癌多见。\nX线表现：腔内不规则充盈缺损、胃腔狭窄胃壁僵硬、黏膜破坏消失、蠕动消失。溃疡型胃癌的半月综合征：腔内龛影+环堤+指压迹+尖角征。",
                   "subtopics": [],
-                  "flashcards": [],
+                  "flashcards": [
+                    {
+                      "front": "胃癌的\"皮革胃\"X线表现是什么？",
+                      "back": "胃腔弥漫性狭窄，胃壁僵硬蠕动消失，黏膜皱襞杵状中断"
+                    }
+                  ],
                   "quiz": []
                 },
                 {
@@ -3588,7 +3598,16 @@
                   "title": "CT表现",
                   "content": "CT平扫：不规则低密度肿块，边界不清，门静脉瘤栓形成。增强：“快进快出”——动脉期明显均匀/不均匀强化>正常肝实质→门脉期密度迅速下降<正常肝实质→延迟期低密度。转移性肝癌CT典型征象：“牛眼征“。肝硬化\nCT表现：肝脏体积缩小、肝裂增宽、各叶比例失调、边缘结节状或锯齿状、脾大、门静脉高压、腹水。",
                   "subtopics": [],
-                  "flashcards": [],
+                  "flashcards": [
+                    {
+                      "front": "肝癌CT增强的\"快进快出\"具体指什么？",
+                      "back": "动脉期快速显著强化（快进）+ 门静脉期/延迟期强化减退低于周围肝实质（快出）"
+                    },
+                    {
+                      "front": "肝癌CT增强的包膜样强化出现在哪个期相？",
+                      "back": "门静脉期和延迟期，肿瘤边缘环形强化"
+                    }
+                  ],
                   "quiz": []
                 },
                 {
@@ -4601,7 +4620,7 @@
             {
               "id": "ch5_cns-methods_超声表现",
               "title": "超声表现",
-              "content": "超声检查、放射性核素检查。",
+              "content": "",
               "subtopics": [],
               "flashcards": [],
               "quiz": []
@@ -5464,7 +5483,7 @@
             {
               "id": "ch5_intracranial-infection_MRI表现",
               "title": "MRI表现",
-              "content": "MRI表现。",
+              "content": "",
               "subtopics": [],
               "flashcards": [],
               "quiz": []
@@ -5625,7 +5644,7 @@
             {
               "id": "ch5_head-neck-diseases_MRI表现",
               "title": "MRI表现",
-              "content": "MRI表现。",
+              "content": "",
               "subtopics": [],
               "flashcards": [],
               "quiz": []
