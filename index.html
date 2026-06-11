@@ -36,7 +36,12 @@
           <h2>我的课程</h2>
           <p>选择一门课程开始复习</p>
         </div>
-        <div class="course-grid" id="course-grid"></div>
+        <div class="course-grid" id="course-grid">
+          <div style="text-align:center;padding:40px 20px" id="loading-msg">
+            <p style="font-size:2rem">📚</p>
+            <p style="color:var(--text-muted);margin-top:8px">课程加载中...</p>
+          </div>
+        </div>
       </div>
 
       <!-- Course Detail Page -->
@@ -67,6 +72,12 @@
     </nav>
   </div>
 
+  <script>
+    window.onerror = function(msg, url, line) {
+      var grid = document.getElementById('course-grid');
+      if (grid) grid.innerHTML = '<div style=\"padding:20px;color:#c46b6b;text-align:center\"><b>JS错误</b><br><small>' + msg + '<br>行: ' + line + '</small></div>';
+    };
+  </script>
   <script src="js/storage.js?v=3"></script>
   <script src="js/app.js?v=3"></script>
 </body>
