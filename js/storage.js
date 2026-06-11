@@ -16,8 +16,7 @@ const Storage = {
 
   _default() {
     return {
-      completedFlashcards: [],
-      quizScores: [],
+      completedTopics: [],
     };
   },
 
@@ -27,28 +26,25 @@ const Storage = {
     } catch { /* storage full, ignore */ }
   },
 
-  markFlashcardDone(courseId, cardKey) {
+  toggleTopicDone(courseId, topicId) {
     const data = this.get(courseId);
-    if (!data.completedFlashcards.includes(cardKey)) {
-      data.completedFlashcards.push(cardKey);
+    const idx = data.completedTopics.indexOf(topicId);
+    if (idx >= 0) {
+      data.completedTopics.splice(idx, 1);
+    } else {
+      data.completedTopics.push(topicId);
     }
     this.save(courseId, data);
   },
 
-  saveQuizScore(courseId, score, total, topicId) {
-    const data = this.get(courseId);
-    data.quizScores.push({ score, total, topicId, date: Date.now() });
-    this.save(courseId, data);
+  isTopicDone(courseId, topicId) {
+    return this.get(courseId).completedTopics.includes(topicId);
   },
 
-  getFlashcardProgress(courseId, totalCards) {
+  getTopicProgress(courseId, totalTopics) {
     const data = this.get(courseId);
-    return totalCards > 0
-      ? Math.round((data.completedFlashcards.length / totalCards) * 100)
+    return totalTopics > 0
+      ? Math.round((data.completedTopics.length / totalTopics) * 100)
       : 0;
-  },
-
-  getTotalFlashcardCount(courseId) {
-    return this.get(courseId).completedFlashcards.length;
   },
 };

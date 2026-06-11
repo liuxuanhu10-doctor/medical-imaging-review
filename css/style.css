@@ -725,6 +725,29 @@ ul, ol { list-style: none; }
   color: var(--text);
 }
 
+/* Topic bookmark & progress */
+.topic-done-cb {
+  font-size: 1rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 2px;
+  user-select: none;
+  transition: transform 0.2s;
+}
+.topic-done-cb:hover { transform: scale(1.2); }
+.topic-bookmark-btn {
+  font-size: 0.9rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 2px 4px;
+  opacity: 0.4;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.topic-bookmark-btn:hover,
+.topic-bookmark-btn.bookmarked { opacity: 1; transform: scale(1.15); }
+.topic-header .topic-title.done-text { text-decoration: line-through; opacity: 0.6; }
+.topic-content.done-content { opacity: 0.5; }
+
 .topic-header .topic-badge {
   font-size: var(--font-xs);
   color: var(--text-muted);

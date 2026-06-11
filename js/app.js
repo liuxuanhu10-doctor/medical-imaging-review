@@ -1,4 +1,4 @@
-/* global Storage, Flashcard, Quiz */
+/* global Storage */
 
 const App = {
   courses: [],
@@ -7,17 +7,48 @@ const App = {
   currentChapterId: null,
   currentFocusId: null,
   currentFocusPath: null,
-  currentMode: 'notes', // 'notes' | 'flashcard' | 'quiz'
   _lastQuery: '',
+  bookmarks: new Set(),
 
   async init() {
     await this._loadCourseIndex();
+    this._loadBookmarks();
     this._bindNav();
     this._initTheme();
     this._initBackToTop();
     this._handleRoute();
     window.addEventListener('hashchange', () => this._handleRoute());
   },
+
+  _loadBookmarks() {
+    try {
+      const saved = localStorage.getItem('medreview_bookmarks');
+      if (saved) this.bookmarks = new Set(JSON.parse(saved));
+    } catch { this.bookmarks = new Set(); }
+  },
+
+  _saveBookmarks() {
+    localStorage.setItem('medreview_bookmarks', JSON.stringify([...this.bookmarks]));
+  },
+
+  _toggleBookmark(topicId) {
+    if (this.bookmarks.has(topicId)) {
+      this.bookmarks.delete(topicId);
+    } else {
+      this.bookmarks.add(topicId);
+    }
+    this._saveBookmarks();
+    this._renderCurrentMode();
+  },
+
+  _isBookmarked(topicId) { return this.bookmarks.has(topicId); },
+
+  _toggleTopicDone(topicId) {
+    Storage.toggleTopicDone(this.currentCourse.id, topicId);
+    this._renderCurrentMode();
+  },
+
+  _isTopicDone(topicId) { return Storage.isTopicDone(this.currentCourse.id, topicId); },
 
   _initTheme() {
     const saved = localStorage.getItem('medreview_theme');
@@ -172,13 +203,11 @@ const App = {
   /* ===== Course Detail Page ===== */
   async _showCourse(courseId) {
     this._switchPage('page-course');
-    this.currentMode = 'notes';
     this.currentTopicId = null;
     this.currentChapterId = null;
     this.currentFocusId = null;
     this.currentFocusPath = null;
 
-    // Show loading
     document.getElementById('course-content').innerHTML =
       '<div class="empty-state"><p>加载中...</p></div>';
 
@@ -195,16 +224,12 @@ const App = {
     }
 
     document.getElementById('course-detail-title').textContent = this.currentCourse.title;
-
-    // Bind back button
     document.getElementById('btn-back-home').onclick = () => this.navigate('home');
 
-    // Render chapter selector and mode tabs
     this._renderChapterBar();
-    this._renderModeTabs();
-    this._renderCurrentMode();
+    this._renderTopicActions();
+    this._renderNotes();
 
-    // Init search
     this._initSearch();
   },
 
@@ -527,7 +552,6 @@ const App = {
     document.getElementById('sd-btn-view-in-page').onclick = () => {
       closeModal();
       // Navigate to the topic in notes mode
-      this.currentMode = 'notes';
       this.currentFocusId = topicId;
       this.currentFocusPath = idPath;
       this.currentChapterId = null;
@@ -575,63 +599,15 @@ const App = {
     });
   },
 
-  _renderModeTabs() {
-    const tabs = document.getElementById('mode-tabs');
-    tabs.innerHTML = `
-      <button class="mode-tab ${this.currentMode === 'notes' ? 'active' : ''}" data-mode="notes">📒 笔记浏览</button>
-      <button class="mode-tab ${this.currentMode === 'flashcard' ? 'active' : ''}" data-mode="flashcard">🃏 闪卡记忆</button>
-      <button class="mode-tab ${this.currentMode === 'quiz' ? 'active' : ''}" data-mode="quiz">📝 选择题测验</button>
-    `;
-
-    tabs.querySelectorAll('.mode-tab').forEach((tab) => {
-      tab.addEventListener('click', () => {
-        this.currentMode = tab.dataset.mode;
-        this._renderModeTabs();
-        this._renderCurrentMode();
-      });
-    });
-  },
-
-  _renderCurrentMode() {
-    const content = document.getElementById('course-content');
-    switch (this.currentMode) {
-      case 'notes':
-        this._renderNotes(content);
-        break;
-      case 'flashcard':
-        this._renderFlashcard(content);
-        break;
-      case 'quiz':
-        this._renderQuiz(content);
-        break;
-    }
-  },
-
-  /* ===== Notes Mode ===== */
-  _renderNotes(container) {
-    const course = this.currentCourse;
-    let topics = course.topics;
-
-    // Filter by chapter
-    if (this.currentChapterId) {
-      topics = topics.filter((t) => t.id === this.currentChapterId);
-    }
-
-    // Focus mode: show only the branch containing the focused topic
-    if (this.currentFocusId && this.currentFocusPath) {
-      const rootId = this.currentFocusPath[0];
-      topics = topics.filter((t) => t.id === rootId);
-    }
-
+  _renderTopicActions() {
+    const container = document.getElementById('topic-actions');
+    const showBookmarks = this.bookmarks.size > 0;
     container.innerHTML = `
-      <div class="topic-actions">
-        <button class="btn-sm" id="btn-expand-all">📂 全部展开</button>
-        <button class="btn-sm" id="btn-collapse-all">📁 全部收缩</button>
-        ${this.currentFocusId ? '<button class="btn-sm" id="btn-clear-focus">📋 显示全部</button>' : ''}
-      </div>
-      <div class="topic-tree" id="topic-tree">
-        ${this._renderTopics(topics)}
-      </div>`;
+      <button class="btn-sm" id="btn-expand-all">📂 全部展开</button>
+      <button class="btn-sm" id="btn-collapse-all">📁 全部收缩</button>
+      ${this.currentFocusId ? '<button class="btn-sm" id="btn-clear-focus">📋 显示全部</button>' : ''}
+      ${showBookmarks ? '<button class="btn-sm" id="btn-show-bookmarks">⭐ 只看收藏</button>' : ''}
+    `;
 
     document.getElementById('btn-expand-all').onclick = () => {
       document.querySelectorAll('.topic-node').forEach((n) => n.classList.add('expanded'));
@@ -644,12 +620,103 @@ const App = {
       document.getElementById('btn-clear-focus').onclick = () => {
         this.currentFocusId = null;
         this.currentFocusPath = null;
-        this._renderNotes(container);
+        this._renderTopicActions();
+        this._renderNotes();
       };
     }
 
+    if (showBookmarks) {
+      document.getElementById('btn-show-bookmarks').onclick = () => {
+        this._showBookmarksModal();
+      };
+    }
+  },
+
+  _showBookmarksModal() {
+    const items = [];
+    const walk = (topics, path) => {
+      for (const t of topics) {
+        if (this.bookmarks.has(t.id)) {
+          items.push({ id: t.id, title: t.title, path: [...path, t.title] });
+        }
+        if (t.subtopics) walk(t.subtopics, [...path, t.title]);
+      }
+    };
+    for (const ch of this.currentCourse.topics) walk([ch], []);
+
+    const html = `
+      <div class="search-detail-overlay show" id="bookmark-overlay">
+        <div class="search-detail-panel">
+          <div class="search-detail-header">
+            <h3>⭐ 收藏的知识点 (${items.length})</h3>
+            <button class="search-detail-close" id="bm-close">✕</button>
+          </div>
+          <div class="search-detail-body">
+            ${items.length === 0 ? '<p style="color:var(--text-muted)">暂无收藏</p>' : ''}
+            ${items.map((m) => `
+              <div class="search-result-item" data-bm-id="${m.id}" style="cursor:pointer">
+                <div class="sr-title">${this._escape(m.title)}</div>
+                <div class="sr-path">
+                  <div class="sr-breadcrumb">
+                    ${m.path.filter(p => p && p !== m.title).slice(-3).map(p => `<span>${this._escape(p)}</span>`).join('')}
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+            <div class="sd-actions" style="margin-top:16px">
+              <button class="sd-btn-close" id="bm-clear-all" style="background:var(--wrong);color:#fff">清除所有收藏</button>
+              <button class="sd-btn-close" id="bm-close-bottom">关闭</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+
+    const mainContent = document.getElementById('main-content');
+    mainContent.insertAdjacentHTML('beforeend', html);
+    const overlay = document.getElementById('bookmark-overlay');
+
+    const closeModal = () => { overlay.classList.remove('show'); setTimeout(() => overlay.remove(), 200); };
+    document.getElementById('bm-close').onclick = closeModal;
+    document.getElementById('bm-close-bottom').onclick = closeModal;
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+
+    document.getElementById('bm-clear-all').onclick = () => {
+      this.bookmarks.clear();
+      this._saveBookmarks();
+      closeModal();
+      this._renderTopicActions();
+      this._renderNotes();
+    };
+
+    overlay.querySelectorAll('[data-bm-id]').forEach((item) => {
+      item.addEventListener('click', () => {
+        closeModal();
+        this._showTopicDetail(item.dataset.bmId);
+      });
+    });
+  },
+
+  /* ===== Notes Mode ===== */
+  _renderNotes() {
+    const course = this.currentCourse;
+    let topics = course.topics;
+    const container = document.getElementById('course-content');
+
+    if (this.currentChapterId) {
+      topics = topics.filter((t) => t.id === this.currentChapterId);
+    }
+
+    if (this.currentFocusId && this.currentFocusPath) {
+      const rootId = this.currentFocusPath[0];
+      topics = topics.filter((t) => t.id === rootId);
+    }
+
+    container.innerHTML = `<div class="topic-tree" id="topic-tree">${this._renderTopics(topics)}</div>`;
+
+    this._renderTopicActions();
+
     // Bind topic toggling
-    document.querySelectorAll('.topic-header').forEach((header) => {
+    container.querySelectorAll('.topic-header').forEach((header) => {
       header.addEventListener('click', (e) => {
         e.stopPropagation();
         const node = header.closest('.topic-node');
@@ -657,26 +724,19 @@ const App = {
       });
     });
 
-    // Bind flashcard and quiz buttons on topic headers
-    container.querySelectorAll('.topic-flashcard-btn').forEach((btn) => {
+    // Bind bookmark buttons
+    container.querySelectorAll('.topic-bookmark-btn').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.currentTopicId = btn.dataset.topicId;
-        this.currentMode = 'flashcard';
-        this._renderModeTabs();
-        this._renderCurrentMode();
-        document.getElementById('course-content').scrollIntoView({ behavior: 'smooth' });
+        this._toggleBookmark(btn.dataset.topicId);
       });
     });
 
-    container.querySelectorAll('.topic-quiz-btn').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
+    // Bind done checkboxes
+    container.querySelectorAll('.topic-done-cb').forEach((cb) => {
+      cb.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.currentTopicId = btn.dataset.topicId;
-        this.currentMode = 'quiz';
-        this._renderModeTabs();
-        this._renderCurrentMode();
-        document.getElementById('course-content').scrollIntoView({ behavior: 'smooth' });
+        this._toggleTopicDone(cb.dataset.topicId);
       });
     });
   },
@@ -685,13 +745,9 @@ const App = {
     return topics
       .map((t) => {
         const hasChildren = t.subtopics && t.subtopics.length > 0;
-        const hasFlashcards = t.flashcards && t.flashcards.length > 0;
-        const hasQuiz = t.quiz && t.quiz.length > 0;
-        const badges = [];
-        if (hasFlashcards) badges.push(`${t.flashcards.length} 张闪卡`);
-        if (hasQuiz) badges.push(`${t.quiz.length} 道测验`);
+        const isBookmarked = this._isBookmarked(t.id);
+        const isDone = this._isTopicDone(t.id);
 
-        // Focus mode: filter subtopics to only the path chain
         let childrenHtml = '';
         if (hasChildren) {
           let filteredSubs = t.subtopics;
@@ -702,7 +758,6 @@ const App = {
               filteredSubs = t.subtopics.filter((s) => s.id === nextId);
             }
           } else if (this.currentFocusPath && !this.currentFocusPath.includes(t.id)) {
-            // Not in focus path, don't show children
             filteredSubs = [];
           }
           if (filteredSubs.length > 0) {
@@ -710,211 +765,25 @@ const App = {
           }
         }
 
-        // Force expand if in focus path
         const isInFocusPath = this.currentFocusPath && this.currentFocusPath.includes(t.id);
         const isTarget = this.currentFocusId === t.id;
         const expandClass = (level === 0 || isInFocusPath) ? ' expanded' : '';
+        const doneClass = isDone ? ' topic-done' : '';
 
         return `
         <div class="topic-node${expandClass}" data-topic-id="${t.id}">
-          <div class="topic-header">
+          <div class="topic-header${doneClass}">
+            <span class="topic-done-cb" data-topic-id="${t.id}" title="标记已学">${isDone ? '✅' : '○'}</span>
             <span class="chevron">▶</span>
             ${this._modalityTag(t.title)}
-            <span class="topic-title${isTarget ? ' search-highlight' : ''}">${this._escape(t.title)}</span>
-            ${
-              badges.length > 0
-                ? `<span class="topic-badge">${badges.join(' · ')}</span>`
-                : ''
-            }
-            ${
-              hasFlashcards
-                ? `<button class="btn-sm topic-flashcard-btn" data-topic-id="${t.id}" title="复习闪卡">🃏</button>`
-                : ''
-            }
-            ${
-              hasQuiz
-                ? `<button class="btn-sm topic-quiz-btn" data-topic-id="${t.id}" title="做测验">📝</button>`
-                : ''
-            }
+            <span class="topic-title${isTarget ? ' search-highlight' : ''}${doneClass ? ' done-text' : ''}">${this._escape(t.title)}</span>
+            <button class="topic-bookmark-btn${isBookmarked ? ' bookmarked' : ''}" data-topic-id="${t.id}" title="${isBookmarked ? '取消收藏' : '收藏'}">${isBookmarked ? '⭐' : '☆'}</button>
           </div>
-          <div class="topic-content">${this._escape(t.content || '')}</div>
+          <div class="topic-content${doneClass ? ' done-content' : ''}">${this._escape(t.content || '')}</div>
           ${childrenHtml}
         </div>`;
       })
       .join('');
-  },
-
-  /* ===== Flashcard Mode ===== */
-  _renderFlashcard(container) {
-    // If no specific topic selected, show topic selector
-    if (!this.currentTopicId) {
-      this._renderFlashcardSelector(container);
-      return;
-    }
-
-    container.innerHTML = `
-      <div style="margin-bottom:16px;display:flex;align-items:center;gap:8px;">
-        <button class="btn-sm" id="btn-flashcard-back">← 选择章节</button>
-        <span style="font-size:var(--font-sm);color:var(--text-secondary);">
-          当前章节：${this.currentTopicId === '__all__' ? '全部章节' : this._getTopicTitle(this.currentTopicId)}
-        </span>
-      </div>
-      <div id="flashcard-area"></div>`;
-
-    document.getElementById('btn-flashcard-back').onclick = () => {
-      this.currentTopicId = null;
-      this._renderFlashcard(container);
-    };
-
-    Flashcard.init(
-      document.getElementById('flashcard-area'),
-      this.currentCourse,
-      this.currentTopicId
-    );
-  },
-
-  _renderFlashcardSelector(container) {
-    let topics = this.currentCourse.topics;
-    if (this.currentChapterId) {
-      topics = topics.filter((t) => t.id === this.currentChapterId);
-    }
-    const allFlashcardCount = this._countAllFlashcards(topics);
-    const showAllOption = !this.currentChapterId;
-    container.innerHTML = `
-      <div class="quiz-mode-select">
-        <p style="margin-bottom:16px;">请选择要复习的章节：</p>
-        <div class="quiz-topic-select">
-          ${showAllOption ? `
-          <button class="quiz-topic-btn topic-select-option" data-topic-id="__all__">
-            📚 全部章节 <span class="topic-count">${allFlashcardCount} 张闪卡</span>
-          </button>` : ''}
-          ${this._renderFlashcardTopicOptions(topics)}
-        </div>
-      </div>`;
-
-    container.querySelectorAll('.topic-select-option').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        this.currentTopicId = btn.dataset.topicId;
-        this._renderFlashcard(container);
-      });
-    });
-  },
-
-  _renderFlashcardTopicOptions(topics) {
-    return topics
-      .map((t) => {
-        const count = t.flashcards ? t.flashcards.length : 0;
-        const childContent = t.subtopics ? this._renderFlashcardTopicOptions(t.subtopics) : '';
-        if (count === 0 && !childContent) return '';
-        return `
-          <button class="quiz-topic-btn topic-select-option" data-topic-id="${t.id}">
-            ${this._escape(t.title)} <span class="topic-count">${count > 0 ? count + ' 张闪卡' : ''}</span>
-          </button>
-          ${childContent}`;
-      })
-      .join('');
-  },
-
-  _countAllFlashcards(topics) {
-    let count = 0;
-    for (const t of topics) {
-      if (t.flashcards) count += t.flashcards.length;
-      if (t.subtopics) count += this._countAllFlashcards(t.subtopics);
-    }
-    return count;
-  },
-
-  _getTopicTitle(topicId) {
-    const find = (topics) => {
-      for (const t of topics) {
-        if (t.id === topicId) return t.title;
-        if (t.subtopics) {
-          const r = find(t.subtopics);
-          if (r) return r;
-        }
-      }
-      return null;
-    };
-    return find(this.currentCourse.topics) || topicId;
-  },
-
-  /* ===== Quiz Mode ===== */
-  _renderQuiz(container) {
-    if (!this.currentTopicId) {
-      this._renderQuizSelector(container);
-      return;
-    }
-
-    container.innerHTML = `
-      <div style="margin-bottom:16px;display:flex;align-items:center;gap:8px;">
-        <button class="btn-sm" id="btn-quiz-back">← 选择章节</button>
-        <span style="font-size:var(--font-sm);color:var(--text-secondary);">
-          当前章节：${this.currentTopicId === '__all__' ? '全部章节' : this._getTopicTitle(this.currentTopicId)}
-        </span>
-      </div>
-      <div id="quiz-area"></div>`;
-
-    document.getElementById('btn-quiz-back').onclick = () => {
-      this.currentTopicId = null;
-      this._renderQuiz(container);
-    };
-
-    Quiz.init(
-      document.getElementById('quiz-area'),
-      this.currentCourse,
-      this.currentTopicId
-    );
-  },
-
-  _renderQuizSelector(container) {
-    let topics = this.currentCourse.topics;
-    if (this.currentChapterId) {
-      topics = topics.filter((t) => t.id === this.currentChapterId);
-    }
-    const allQuizCount = this._countAllQuiz(topics);
-    const showAllOption = !this.currentChapterId;
-    container.innerHTML = `
-      <div class="quiz-mode-select">
-        <p style="margin-bottom:16px;">请选择要测验的章节：</p>
-        <div class="quiz-topic-select">
-          ${showAllOption ? `
-          <button class="quiz-topic-btn topic-select-option" data-topic-id="__all__">
-            📚 全部章节 <span class="topic-count">${allQuizCount} 道题</span>
-          </button>` : ''}
-          ${this._renderQuizTopicOptions(topics)}
-        </div>
-      </div>`;
-
-    container.querySelectorAll('.topic-select-option').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        this.currentTopicId = btn.dataset.topicId;
-        this._renderQuiz(container);
-      });
-    });
-  },
-
-  _renderQuizTopicOptions(topics) {
-    return topics
-      .map((t) => {
-        const count = t.quiz ? t.quiz.length : 0;
-        const childContent = t.subtopics ? this._renderQuizTopicOptions(t.subtopics) : '';
-        if (count === 0 && !childContent) return '';
-        return `
-          <button class="quiz-topic-btn topic-select-option" data-topic-id="${t.id}">
-            ${this._escape(t.title)} <span class="topic-count">${count > 0 ? count + ' 道题' : ''}</span>
-          </button>
-          ${childContent}`;
-      })
-      .join('');
-  },
-
-  _countAllQuiz(topics) {
-    let count = 0;
-    for (const t of topics) {
-      if (t.quiz) count += t.quiz.length;
-      if (t.subtopics) count += this._countAllQuiz(t.subtopics);
-    }
-    return count;
   },
 
   _modalityTag(title) {
