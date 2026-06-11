@@ -174,7 +174,8 @@ ul, ol { list-style: none; }
   padding-bottom: env(safe-area-inset-bottom);
 }
 
-.bottom-nav a {
+.bottom-nav a,
+.bottom-nav .theme-toggle {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -187,9 +188,11 @@ ul, ol { list-style: none; }
   min-width: 56px;
 }
 
-.bottom-nav a .icon { font-size: 1.3rem; }
+.bottom-nav a .icon,
+.bottom-nav .theme-toggle { font-size: 1.3rem; }
 
 .bottom-nav a.active { color: var(--accent); font-weight: 600; }
+.bottom-nav .theme-toggle:hover { background: var(--accent-light); }
 
 /* ===== Page containers ===== */
 .page { display: none; }
