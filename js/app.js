@@ -38,14 +38,14 @@ const App = {
       this.bookmarks.add(topicId);
     }
     this._saveBookmarks();
-    this._renderCurrentMode();
+    this._renderTopicActions(); this._renderNotes();
   },
 
   _isBookmarked(topicId) { return this.bookmarks.has(topicId); },
 
   _toggleTopicDone(topicId) {
     Storage.toggleTopicDone(this.currentCourse.id, topicId);
-    this._renderCurrentMode();
+    this._renderTopicActions(); this._renderNotes();
   },
 
   _isTopicDone(topicId) { return Storage.isTopicDone(this.currentCourse.id, topicId); },
@@ -174,7 +174,7 @@ const App = {
 
     grid.innerHTML = this.courses
       .map((c) => {
-        const progress = Storage.getFlashcardProgress(c.id, c.totalCards || 0);
+        const progress = Storage.getTopicProgress(c.id, c.totalCards || 0);
         return `
         <div class="course-card" data-course-id="${c.id}">
           <div class="card-icon">${c.icon || '📖'}</div>
@@ -262,7 +262,7 @@ const App = {
           this.currentTopicId = null;
         }
         this._renderChapterBar();
-        this._renderCurrentMode();
+        this._renderTopicActions(); this._renderNotes();
         document.getElementById('course-content').scrollIntoView({ behavior: 'smooth' });
       });
     });
@@ -557,7 +557,7 @@ const App = {
       this.currentChapterId = null;
       this._renderChapterBar();
       this._renderModeTabs();
-      this._renderCurrentMode();
+      this._renderTopicActions(); this._renderNotes();
       setTimeout(() => {
         const el = document.querySelector(`[data-topic-id="${topicId}"]`);
         if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
