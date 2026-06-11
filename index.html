@@ -55,6 +55,25 @@
       </div>
       <!-- Back to top -->
       <button class="back-to-top" id="back-to-top" title="回到顶部">↑</button>
+
+      <!-- AI Assistant Floating Button -->
+      <button class="ai-float-btn" id="ai-float-btn" title="AI助手">🤖</button>
+
+      <!-- AI Chat Panel -->
+      <div class="ai-panel" id="ai-panel">
+        <div class="ai-panel-header">
+          <span>🤖 AI 学习助手</span>
+          <button class="ai-panel-close" id="ai-panel-close">✕</button>
+        </div>
+        <div class="ai-panel-body">
+          <p class="ai-panel-hint">输入你想问的医学影像问题，跳转到豆包AI获取解答</p>
+          <div class="ai-quick-asks" id="ai-quick-asks"></div>
+          <div class="ai-input-row">
+            <input type="text" id="ai-input" placeholder="输入问题..." autocomplete="off">
+            <button id="ai-send-btn">提问</button>
+          </div>
+        </div>
+      </div>
     </main>
 
     <!-- Mobile Bottom Nav -->
