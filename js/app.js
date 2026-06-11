@@ -369,10 +369,6 @@ const App = {
           </div>
         </div>
         <div class="sr-preview">${this._escape(m.contentPreview)}</div>
-        <div class="sr-meta">
-          ${m.hasFlashcards ? `<span>🃏 ${m.fcCount}张闪卡</span>` : ''}
-          ${m.hasQuiz ? `<span>📝 ${m.qzCount}道题</span>` : ''}
-        </div>
       </div>`
       )
       .join('');
@@ -601,6 +597,7 @@ const App = {
 
   _renderTopicActions() {
     const container = document.getElementById('topic-actions');
+    if (!container) return;
     const showBookmarks = this.bookmarks.size > 0;
     container.innerHTML = `
       <button class="btn-sm" id="btn-expand-all">📂 全部展开</button>
@@ -699,8 +696,10 @@ const App = {
   /* ===== Notes Mode ===== */
   _renderNotes() {
     const course = this.currentCourse;
+    if (!course) return;
     let topics = course.topics;
     const container = document.getElementById('course-content');
+    if (!container) return;
 
     if (this.currentChapterId) {
       topics = topics.filter((t) => t.id === this.currentChapterId);
