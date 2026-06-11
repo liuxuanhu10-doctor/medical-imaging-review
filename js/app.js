@@ -16,7 +16,6 @@ const App = {
     this._bindNav();
     this._initTheme();
     this._initBackToTop();
-    this._initAI();
     this._handleRoute();
     window.addEventListener('hashchange', () => this._handleRoute());
   },
@@ -96,59 +95,6 @@ const App = {
 
     btn.addEventListener('click', () => {
       scrollEl.scrollTo({ top: 0, behavior: 'smooth' });
-    });
-  },
-
-  _initAI() {
-    const floatBtn = document.getElementById('ai-float-btn');
-    const panel = document.getElementById('ai-panel');
-    const closeBtn = document.getElementById('ai-panel-close');
-    const input = document.getElementById('ai-input');
-    const sendBtn = document.getElementById('ai-send-btn');
-    const quickAsks = document.getElementById('ai-quick-asks');
-
-    if (!floatBtn || !panel) return;
-
-    // Quick ask prompts
-    const prompts = [
-      'X线与CT有什么区别',
-      '肝癌的CT表现是什么',
-      '如何理解快进快出',
-      '骨肉瘤的X线特征',
-    ];
-    quickAsks.innerHTML = prompts.map(p => `<button>${p}</button>`).join('');
-
-    // Toggle panel
-    floatBtn.addEventListener('click', () => {
-      panel.classList.toggle('show');
-      if (panel.classList.contains('show')) input.focus();
-    });
-
-    closeBtn.addEventListener('click', () => panel.classList.remove('show'));
-
-    // Close on outside click
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('.ai-panel') && !e.target.closest('.ai-float-btn')) {
-        panel.classList.remove('show');
-      }
-    });
-
-    // Send question to Doubao
-    const askAI = (question) => {
-      const q = encodeURIComponent(question.trim() || '医学影像学');
-      window.open(`https://www.doubao.com/chat/?q=${q}`, '_blank');
-      panel.classList.remove('show');
-      if (input) input.value = '';
-    };
-
-    sendBtn.addEventListener('click', () => askAI(input.value));
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') askAI(input.value);
-    });
-
-    // Quick ask buttons
-    quickAsks.addEventListener('click', (e) => {
-      if (e.target.tagName === 'BUTTON') askAI(e.target.textContent);
     });
   },
 
