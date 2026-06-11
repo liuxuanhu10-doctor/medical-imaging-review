@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>医学复习助手</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Desktop Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <h1>📖 医学复习助手</h1>
+        <p>高效复习 · 系统掌握</p>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#/" data-nav="home" class="active">
+          <span class="icon">🏠</span> 课程列表
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <p>医学课程知识复习</p>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="main-content">
+      <!-- Home Page -->
+      <div class="page active" id="page-home">
+        <div class="home-header">
+          <h2>我的课程</h2>
+          <p>选择一门课程开始复习</p>
+        </div>
+        <div class="course-grid" id="course-grid"></div>
+      </div>
+
+      <!-- Course Detail Page -->
+      <div class="page" id="page-course">
+        <div class="course-detail-header">
+          <button class="back-btn" id="btn-back-home" title="返回课程列表">←</button>
+          <h2 id="course-detail-title">课程名称</h2>
+          <div class="search-box" id="search-box">
+            <input type="text" id="search-input" placeholder="🔍 搜索知识点..." autocomplete="off">
+            <div class="search-results" id="search-results"></div>
+          </div>
+        </div>
+        <div class="chapter-bar" id="chapter-bar"></div>
+        <div class="mode-tabs" id="mode-tabs"></div>
+        <div id="course-content"></div>
+      </div>
+    </main>
+
+    <!-- Mobile Bottom Nav -->
+    <nav class="bottom-nav">
+      <a href="#/" data-nav="home" class="active">
+        <span class="icon">🏠</span>
+        <span>课程</span>
+      </a>
+    </nav>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/flashcard.js"></script>
+  <script src="js/quiz.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

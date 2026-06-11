@@ -1,0 +1,10 @@
+[
+  {
+    "id": "medical-imaging",
+    "title": "医学影像学",
+    "category": "医学影像学",
+    "icon": "🩻",
+    "description": "涵盖总论、骨关节、胸部、腹部、中枢神经系统与五官、介入放射学、超声诊断学七大章节",
+    "totalCards": 358
+  }
+]

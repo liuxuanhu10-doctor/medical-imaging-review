@@ -1,0 +1,5 @@
+pdf_texts/
+extract_pdf.py
+.DS_Store
+*.pdf
+/tmp/
