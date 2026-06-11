@@ -28,6 +28,37 @@
   --bottom-nav-height: 64px;
 }
 
+/* ===== Dark Mode ===== */
+[data-theme="dark"] {
+  --bg: #1a1a1a;
+  --card-bg: #252525;
+  --card-hover: #2e2e2e;
+  --accent: #d4926a;
+  --accent-dark: #e0a880;
+  --accent-light: #4a3025;
+  --text: #e8ddd3;
+  --text-secondary: #b5a595;
+  --text-muted: #7a6e60;
+  --border: #3a3530;
+  --correct: #5a8a5e;
+  --correct-bg: #1e2e1e;
+  --wrong: #b56060;
+  --wrong-bg: #2e1e1e;
+  --shadow: 0 2px 8px rgba(0,0,0,0.3);
+  --shadow-hover: 0 4px 16px rgba(0,0,0,0.4);
+}
+[data-theme="dark"] .course-card:hover { background: var(--card-hover); }
+[data-theme="dark"] .search-box input { background: var(--bg); color: var(--text); }
+[data-theme="dark"] .search-result-item:hover { background: var(--card-hover); }
+[data-theme="dark"] .chapter-btn { background: var(--bg); }
+[data-theme="dark"] .mode-tabs { background: var(--bg); }
+[data-theme="dark"] .mode-tab.active { background: var(--card-bg); }
+[data-theme="dark"] .modality-tag.xray { background: #5a3518; color: #e0a060; }
+[data-theme="dark"] .modality-tag.ct { background: #1a3050; color: #60a0d0; }
+[data-theme="dark"] .modality-tag.mri { background: #1a3a25; color: #60c080; }
+[data-theme="dark"] .modality-tag.us { background: #301a3a; color: #a060d0; }
+[data-theme="dark"] .modal-wrong-bg { background: var(--wrong-bg); }
+
 /* ===== Reset & Base ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -718,21 +749,28 @@ ul, ol { list-style: none; }
 .modality-tag.contrast { background: #d0e8f0; color: #2b6b7d; }
 
 .topic-content {
-  display: none;
-  padding: 4px 14px 16px 36px;
+  max-height: 0;
+  overflow: hidden;
+  padding: 0 14px 0 36px;
   color: var(--text-secondary);
   font-size: var(--font-sm);
   line-height: 1.8;
+  transition: max-height 0.35s ease, padding 0.35s ease;
 }
 
-.topic-node.expanded > .topic-content { display: block; }
+.topic-node.expanded > .topic-content {
+  max-height: 2000px;
+  padding: 4px 14px 16px 36px;
+}
 
 .topic-children {
-  display: none;
+  max-height: 0;
+  overflow: hidden;
   margin-left: 20px;
+  transition: max-height 0.4s ease;
 }
 
-.topic-node.expanded > .topic-children { display: block; }
+.topic-node.expanded > .topic-children { max-height: 50000px; }
 
 /* Expand/collapse all */
 .topic-actions {
@@ -753,6 +791,65 @@ ul, ol { list-style: none; }
 }
 
 .btn-sm:hover { background: var(--accent-light); color: var(--accent-dark); }
+
+/* Back to top button */
+.back-to-top {
+  position: fixed;
+  bottom: calc(var(--bottom-nav-height) + 24px);
+  right: 20px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 1.2rem;
+  box-shadow: var(--shadow-hover);
+  z-index: 300;
+  opacity: 0;
+  transform: translateY(20px);
+  pointer-events: none;
+  transition: opacity 0.3s, transform 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.back-to-top.show {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.back-to-top:hover { background: var(--accent-dark); }
+
+/* Dark mode toggle */
+.theme-toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-secondary);
+}
+.theme-toggle:hover { background: var(--accent-light); }
+
+@media (max-width: 767px) {
+  .back-to-top {
+    bottom: calc(var(--bottom-nav-height) + 16px);
+    right: 14px;
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .back-to-top {
+    bottom: 28px;
+    right: 28px;
+  }
+}
 
 /* ===== Flashcard Mode ===== */
 .flashcard-container {
@@ -1268,9 +1365,12 @@ ul, ol { list-style: none; }
     min-height: 30px;
   }
   .topic-content {
-    padding: 2px 6px 12px 20px;
+    padding: 0 6px 0 20px;
     font-size: 0.85rem;
     line-height: 1.75;
+  }
+  .topic-node.expanded > .topic-content {
+    padding: 2px 6px 12px 20px;
   }
   .topic-children { margin-left: 10px; }
 

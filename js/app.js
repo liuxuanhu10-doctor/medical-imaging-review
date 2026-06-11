@@ -13,8 +13,58 @@ const App = {
   async init() {
     await this._loadCourseIndex();
     this._bindNav();
+    this._initTheme();
+    this._initBackToTop();
     this._handleRoute();
     window.addEventListener('hashchange', () => this._handleRoute());
+  },
+
+  _initTheme() {
+    const saved = localStorage.getItem('medreview_theme');
+    if (saved === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    }
+    const updateIcons = () => {
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      document.querySelectorAll('.theme-toggle').forEach((btn) => {
+        btn.textContent = isDark ? '☀️' : '🌓';
+      });
+    };
+    updateIcons();
+    document.querySelectorAll('.theme-toggle').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+        if (isDark) {
+          document.documentElement.removeAttribute('data-theme');
+          localStorage.setItem('medreview_theme', 'light');
+        } else {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          localStorage.setItem('medreview_theme', 'dark');
+        }
+        updateIcons();
+      });
+    });
+  },
+
+  _initBackToTop() {
+    const btn = document.getElementById('back-to-top');
+    if (!btn) return;
+    const mainContent = document.getElementById('main-content');
+    const scrollEl = document.scrollingElement || document.documentElement;
+
+    const toggle = () => {
+      if (scrollEl.scrollTop > 300) {
+        btn.classList.add('show');
+      } else {
+        btn.classList.remove('show');
+      }
+    };
+
+    window.addEventListener('scroll', toggle, { passive: true });
+
+    btn.addEventListener('click', () => {
+      scrollEl.scrollTo({ top: 0, behavior: 'smooth' });
+    });
   },
 
   async _loadCourseIndex() {
