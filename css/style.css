@@ -1164,33 +1164,163 @@ ul, ol { list-style: none; }
   html { font-size: 15px; }
 
   .main-content {
-    padding: 16px 12px;
-    padding-bottom: calc(var(--bottom-nav-height) + 16px);
+    padding: 12px 10px;
+    padding-bottom: calc(var(--bottom-nav-height) + 20px + env(safe-area-inset-bottom, 0px));
   }
 
   .course-grid {
     grid-template-columns: 1fr;
-    gap: 12px;
+    gap: 10px;
   }
 
-  .course-card { padding: 18px; }
+  .course-card { padding: 16px; }
 
-  .mode-tabs { gap: 2px; }
-  .mode-tab { padding: 8px 10px; font-size: var(--font-xs); }
+  /* Header: stack search below title */
+  .course-detail-header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .course-detail-header h2 {
+    font-size: 1.15rem;
+    order: 1;
+    flex: 0 0 calc(100% - 44px);
+  }
+  .back-btn {
+    order: 0;
+    width: 32px;
+    height: 32px;
+    margin-top: 2px;
+  }
+  .search-box {
+    order: 2;
+    width: 100%;
+    margin-left: 0;
+  }
+  .search-box input {
+    width: 100%;
+    padding: 10px 14px;
+    font-size: 0.95rem;
+    border-radius: 22px;
+  }
+  .search-box input:focus { width: 100%; }
+  .search-results { width: 100%; left: 0; right: auto; }
+  .search-result-item { padding: 12px 14px; }
 
-  .flashcard-scene {
-    height: 240px;
+  /* Chapter bar */
+  .chapter-bar {
+    gap: 6px;
+    margin-bottom: 10px;
+    padding: 2px 0;
+  }
+  .chapter-btn {
+    padding: 8px 12px;
+    font-size: 0.78rem;
   }
 
-  .flashcard-face { padding: 24px 18px; }
+  /* Mode tabs */
+  .mode-tabs { gap: 2px; padding: 3px; }
+  .mode-tab {
+    padding: 10px 8px;
+    font-size: 0.78rem;
+    font-weight: 500;
+  }
 
+  /* Topic actions */
+  .topic-actions {
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .btn-sm {
+    padding: 8px 14px;
+    font-size: 0.78rem;
+    min-height: 36px;
+  }
+
+  /* Topic tree */
+  .topic-node { border-left-width: 1px; }
+  .topic-header {
+    padding: 12px 6px;
+    gap: 6px;
+    min-height: 44px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+  .topic-header .chevron {
+    width: 24px;
+    height: 24px;
+    margin-top: 1px;
+  }
+  .topic-header .topic-title {
+    font-size: 0.9rem;
+    flex: 1 1 auto;
+    min-width: 0;
+    word-break: break-word;
+  }
+  .topic-header .topic-badge {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+  .topic-header .btn-sm {
+    padding: 5px 10px;
+    font-size: 0.7rem;
+    min-height: 30px;
+  }
+  .topic-content {
+    padding: 2px 6px 12px 20px;
+    font-size: 0.85rem;
+    line-height: 1.75;
+  }
+  .topic-children { margin-left: 10px; }
+
+  /* Modality tags */
+  .modality-tag {
+    font-size: 10px;
+    padding: 1px 6px;
+    white-space: nowrap;
+  }
+
+  /* Flashcard */
+  .flashcard-scene { height: 220px; }
+  .flashcard-face { padding: 20px 14px; }
+  .flashcard-face .card-body { font-size: 1rem; }
   .flashcard-actions { flex-direction: column; }
 
+  /* Quiz */
   .quiz-header { flex-direction: column; gap: 8px; align-items: flex-start; }
+  .quiz-option {
+    padding: 12px 14px;
+    font-size: 0.9rem;
+  }
 
-  .topic-header { padding: 10px 8px; }
-  .topic-content { padding: 4px 8px 14px 24px; }
-  .topic-children { margin-left: 12px; }
+  /* Home */
+  .home-header { margin-bottom: 14px; }
+  .home-header h2 { font-size: var(--font-lg); }
+
+  /* Search detail */
+  .search-detail-overlay { padding: 12px 4px; align-items: flex-start; }
+  .search-detail-panel { max-height: 92vh; border-radius: 10px; }
+  .search-detail-header { padding: 14px 14px 10px; }
+  .search-detail-header h3 { font-size: 1rem; }
+  .search-detail-body { padding: 10px 14px 16px; }
+  .search-detail-content { font-size: 0.85rem; }
+  .sd-flashcard { padding: 10px 12px; min-height: 50px; }
+  .sd-flashcard .sd-fc-front,
+  .sd-flashcard .sd-fc-back { font-size: 0.85rem; }
+  .sd-qz-opt { padding: 8px 14px; font-size: 0.85rem; min-height: 40px; display: flex; align-items: center; }
+  .sd-actions { flex-direction: column; }
+  .sd-actions button { width: 100%; text-align: center; padding: 12px; }
+}
+
+/* ===== Responsive - very small screens ===== */
+@media (max-width: 374px) {
+  .topic-header .topic-title { font-size: 0.82rem; }
+  .topic-header .topic-badge { display: none; }
+  .topic-content { padding-left: 14px; }
+  .topic-children { margin-left: 6px; }
+  .mode-tab { padding: 8px 4px; font-size: 0.7rem; }
+  .chapter-btn { padding: 6px 10px; font-size: 0.7rem; }
 }
 
 /* Large desktop */
