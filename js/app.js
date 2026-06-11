@@ -101,6 +101,7 @@ const App = {
   async _loadCourseIndex() {
     try {
       const res = await fetch('data/courses.json');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
       this.courses = await res.json();
     } catch {
       this.courses = [];
@@ -110,6 +111,7 @@ const App = {
   async _loadCourse(id) {
     try {
       const res = await fetch(`data/${id}.json`);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
       this.currentCourse = await res.json();
     } catch {
       this.currentCourse = null;
