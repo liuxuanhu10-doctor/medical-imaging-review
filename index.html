@@ -60,6 +60,29 @@
       </div>
       <!-- Back to top -->
       <button class="back-to-top" id="back-to-top" title="回到顶部">↑</button>
+
+      <!-- AI Chat Panel -->
+      <div class="ai-chat" id="ai-chat">
+        <div class="ai-chat-header" id="ai-chat-header">
+          <span>🤖 AI 学习助手</span>
+          <div class="ai-chat-header-btns">
+            <button class="ai-chat-mini-btn" id="ai-clear-chat" title="清空对话">🔄</button>
+            <button class="ai-chat-mini-btn" id="ai-close-chat" title="最小化">—</button>
+          </div>
+        </div>
+        <div class="ai-chat-body" id="ai-chat-body">
+          <div class="ai-chat-msg ai-msg-system">你好！我是AI学习助手。选中任意知识点后点击「🤖 提问」，或直接输入问题。</div>
+          <div class="ai-chat-msg ai-msg-system ai-msg-api-hint" id="ai-api-hint">首次使用请设置API Key：<a href="https://platform.deepseek.com/api_keys" target="_blank">获取DeepSeek Key</a></div>
+        </div>
+        <div class="ai-chat-input-row">
+          <input type="password" id="ai-api-key" placeholder="输入API Key（仅存本地）" autocomplete="off">
+          <input type="text" id="ai-chat-input" placeholder="输入问题..." autocomplete="off">
+          <button id="ai-chat-send">发送</button>
+        </div>
+      </div>
+
+      <!-- AI Floating Button -->
+      <button class="ai-float-btn" id="ai-float-btn" title="AI助手">🤖</button>
     </main>
 
     <!-- Mobile Bottom Nav -->

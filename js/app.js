@@ -29,6 +29,151 @@ const App = {
     if (this.fontSize !== 'md') {
       document.documentElement.classList.add('font-' + this.fontSize);
     }
+    this._initAIChat();
+  },
+
+  /* ===== AI Chat ===== */
+  _initAIChat() {
+    const floatBtn = document.getElementById('ai-float-btn');
+    const chatPanel = document.getElementById('ai-chat');
+    const chatBody = document.getElementById('ai-chat-body');
+    const chatInput = document.getElementById('ai-chat-input');
+    const sendBtn = document.getElementById('ai-chat-send');
+    const apiKeyInput = document.getElementById('ai-api-key');
+    const closeBtn = document.getElementById('ai-close-chat');
+    const clearBtn = document.getElementById('ai-clear-chat');
+    const apiHint = document.getElementById('ai-api-hint');
+
+    if (!floatBtn || !chatPanel) return;
+
+    // Restore API key
+    const savedKey = localStorage.getItem('medreview_apikey');
+    if (savedKey && apiKeyInput) {
+      apiKeyInput.value = savedKey;
+      if (apiHint) apiHint.style.display = 'none';
+    }
+
+    // Toggle panel
+    floatBtn.addEventListener('click', () => {
+      chatPanel.classList.toggle('open');
+      if (chatPanel.classList.contains('open')) {
+        chatInput.focus();
+      }
+    });
+
+    closeBtn.addEventListener('click', () => chatPanel.classList.remove('open'));
+
+    clearBtn.addEventListener('click', () => {
+      chatBody.innerHTML = '<div class="ai-chat-msg ai-msg-system">对话已清空，有什么可以帮你的？</div>';
+    });
+
+    // Save API key
+    if (apiKeyInput) {
+      apiKeyInput.addEventListener('change', () => {
+        localStorage.setItem('medreview_apikey', apiKeyInput.value.trim());
+        if (apiHint && apiKeyInput.value.trim()) apiHint.style.display = 'none';
+      });
+    }
+
+    // Chat history for context
+    const chatHistory = [];
+
+    const addMessage = (role, text) => {
+      const cls = role === 'user' ? 'ai-msg-user' : role === 'assistant' ? 'ai-msg-ai' : 'ai-msg-system';
+      const div = document.createElement('div');
+      div.className = 'ai-chat-msg ' + cls;
+      div.textContent = text;
+      chatBody.appendChild(div);
+      chatBody.scrollTop = chatBody.scrollHeight;
+      return div;
+    };
+
+    const showTyping = () => {
+      const div = document.createElement('div');
+      div.className = 'ai-chat-typing';
+      div.innerHTML = '<span></span><span></span><span></span>';
+      div.id = 'ai-typing-indicator';
+      chatBody.appendChild(div);
+      chatBody.scrollTop = chatBody.scrollHeight;
+    };
+
+    const hideTyping = () => {
+      const el = document.getElementById('ai-typing-indicator');
+      if (el) el.remove();
+    };
+
+    const sendToAI = async (question) => {
+      const apiKey = (apiKeyInput && apiKeyInput.value.trim()) || savedKey || localStorage.getItem('medreview_apikey');
+      if (!apiKey) {
+        addMessage('system', '请先设置API Key。去 platform.deepseek.com 注册获取（新用户送免费额度），粘贴到上方输入框。');
+        return;
+      }
+      if (!question.trim()) return;
+
+      addMessage('user', question);
+      chatHistory.push({ role: 'user', content: question });
+      showTyping();
+
+      // Build messages with context
+      const messages = [
+        { role: 'system', content: '你是一个医学复习助手，帮助医学生解答医学影像学和卫生法学相关的问题。回答简洁专业，条理清晰。如果用户问的是具体疾病，请列出影像学表现要点。' },
+        ...chatHistory.slice(-6)
+      ];
+
+      try {
+        const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + apiKey
+          },
+          body: JSON.stringify({
+            model: 'deepseek-chat',
+            messages: messages,
+            temperature: 0.7,
+            max_tokens: 800
+          })
+        });
+
+        hideTyping();
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          addMessage('system', 'API错误：' + (err.error?.message || res.status + ' ' + res.statusText) + '。请检查API Key是否正确。');
+          return;
+        }
+
+        const data = await res.json();
+        const reply = data.choices?.[0]?.message?.content || '（未获取到回复）';
+        addMessage('assistant', reply);
+        chatHistory.push({ role: 'assistant', content: reply });
+      } catch (e) {
+        hideTyping();
+        addMessage('system', '网络错误：' + e.message + '。请检查网络连接。');
+      }
+    };
+
+    // Send button
+    sendBtn.addEventListener('click', () => {
+      sendToAI(chatInput.value);
+      chatInput.value = '';
+    });
+
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendToAI(chatInput.value);
+        chatInput.value = '';
+      }
+    });
+
+    // Expose method to ask with context
+    this._askAI = (question) => {
+      if (!chatPanel.classList.contains('open')) {
+        chatPanel.classList.add('open');
+      }
+      sendToAI(question);
+    };
   },
 
   _loadBookmarks() {
