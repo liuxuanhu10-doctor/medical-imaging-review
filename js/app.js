@@ -35,284 +35,150 @@ const App = {
   /* ===== AI Chat ===== */
   _initAIChat() {
     const floatBtn = document.getElementById('ai-float-btn');
-    const chatPanel = document.getElementById('ai-chat');
-    const chatBody = document.getElementById('ai-chat-body');
-    const chatInput = document.getElementById('ai-chat-input');
+    const overlay = document.getElementById('ai-overlay');
+    const body = document.getElementById('ai-dialog-body');
+    const input = document.getElementById('ai-chat-input');
     const sendBtn = document.getElementById('ai-send-btn');
+    const closeBtn = document.getElementById('ai-close-btn');
+    const newBtn = document.getElementById('ai-new-chat-btn');
+    const settingsBtn = document.getElementById('ai-settings-btn');
+    const settingsBar = document.getElementById('ai-settings-bar');
     const apiKeyInput = document.getElementById('ai-api-key');
-    const apiStatus = document.getElementById('ai-api-status');
-    const closeBtn = document.getElementById('ai-close-chat');
-    const newChatBtn = document.getElementById('ai-new-chat');
+    const saveKeyBtn = document.getElementById('ai-save-key');
+    const statusEl = document.getElementById('ai-dialog-status');
     const suggestionsEl = document.getElementById('ai-suggestions');
 
-    if (!floatBtn || !chatPanel) return;
+    if (!floatBtn || !overlay) return;
 
-    // State
     let chatHistory = [];
     const systemPrompt = '你是一个专业的医学复习助手。回答简洁、条理清晰、使用中文。如果问疾病，列出：临床特点、影像学表现（按X线/CT/MRI/超声分点）、鉴别诊断。如果问法律，列出法律依据和要点。';
 
-    // Simple markdown to HTML
     const md2html = (text) => {
-      let html = text
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
-        .replace(/`([^`]+)`/g, '<code>$1</code>')
-        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-        .replace(/^### (.+)$/gm, '<strong>$1</strong>')
-        .replace(/^## (.+)$/gm, '<strong>$1</strong>')
-        .replace(/^# (.+)$/gm, '<strong>$1</strong>')
-        .replace(/^- (.+)$/gm, '<li>$1</li>')
-        .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
-        .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
-        .replace(/<\/li>\s*<li>/g, '</li><li>')
-        .replace(/\n\n/g, '</p><p>')
-        .replace(/\n/g, '<br>');
-      html = '<p>' + html + '</p>';
-      html = html.replace(/<p>\s*<ul>/g, '<ul>').replace(/<\/ul>\s*<\/p>/g, '</ul>');
-      html = html.replace(/<p>\s*<\/p>/g, '');
-      return html;
+      let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+      html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+      html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+      html = html.replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>');
+      html = html.replace(/((?:<li>.*<\/li>\s*)+)/g, '<ul>$1</ul>');
+      html = html.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>');
+      return '<p>' + html + '</p>';
     };
 
-    // API Key management
-    const getApiKey = () => {
-      const key = (apiKeyInput && apiKeyInput.value.trim()) || localStorage.getItem('medreview_apikey');
-      return key;
+    const getApiKey = () => (apiKeyInput && apiKeyInput.value.trim()) || localStorage.getItem('medreview_apikey') || '';
+
+    const updateStatus = () => {
+      const has = !!getApiKey();
+      statusEl.textContent = 'DeepSeek · ' + (has ? '已连接 ✓' : '未连接');
+      if (floatBtn) floatBtn.classList.toggle('has-key', has);
     };
 
-    const updateApiStatus = () => {
-      const key = getApiKey();
-      if (key) {
-        apiStatus.textContent = '已设置 ✓';
-        apiStatus.className = 'ai-api-status ok';
-        if (floatBtn) floatBtn.classList.add('has-key');
-        // Hide welcome suggestions if key is set
-        const welcome = chatBody.querySelector('.ai-chat-welcome');
-        if (welcome && chatHistory.length === 0) {
-          welcome.style.display = 'flex';
-        }
-      } else {
-        apiStatus.textContent = '未设置';
-        apiStatus.className = 'ai-api-status no';
-        if (floatBtn) floatBtn.classList.remove('has-key');
-      }
-    };
-
-    // Restore key
+    // Restore
     const savedKey = localStorage.getItem('medreview_apikey');
-    if (savedKey && apiKeyInput) {
-      apiKeyInput.value = savedKey;
-    }
-    updateApiStatus();
+    if (savedKey && apiKeyInput) apiKeyInput.value = savedKey;
+    updateStatus();
 
-    if (apiKeyInput) {
-      apiKeyInput.addEventListener('input', () => {
-        const val = apiKeyInput.value.trim();
-        if (val) localStorage.setItem('medreview_apikey', val);
-        updateApiStatus();
-      });
-    }
+    // Settings toggle
+    settingsBtn.addEventListener('click', () => {
+      const show = settingsBar.style.display === 'none';
+      settingsBar.style.display = show ? 'flex' : 'none';
+      if (show) apiKeyInput.focus();
+    });
+
+    saveKeyBtn.addEventListener('click', () => {
+      const val = apiKeyInput.value.trim();
+      if (val) { localStorage.setItem('medreview_apikey', val); updateStatus(); settingsBar.style.display = 'none'; }
+    });
 
     // Suggestions
-    const suggestions = [
-      '肝癌的CT表现和鉴别诊断',
-      '硬膜外血肿和硬膜下血肿怎么区分',
-      '肺结核分型及各型X线表现',
-      '医疗事故分几级',
-      '大叶性肺炎的影像学表现',
-    ];
+    const suggestions = ['肝癌CT表现和鉴别', '硬膜外vs硬膜下血肿', '肺结核分型及X线', '医疗事故分几级', '大叶性肺炎影像'];
     if (suggestionsEl) {
       suggestionsEl.innerHTML = suggestions.map(s => `<button>${s}</button>`).join('');
-      suggestionsEl.addEventListener('click', (e) => {
-        if (e.target.tagName === 'BUTTON') {
-          sendToAI(e.target.textContent);
-        }
-      });
+      suggestionsEl.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') send(e.target.textContent); });
     }
 
-    // Render message
-    const renderMessage = (role, text) => {
+    const renderMsg = (role, text) => {
       const row = document.createElement('div');
-      row.className = 'ai-msg-row ' + (role === 'user' ? 'user' : '');
-
-      if (role !== 'user') {
-        const avatar = document.createElement('div');
-        avatar.className = 'ai-msg-avatar ai';
-        avatar.textContent = '🤖';
-        row.appendChild(avatar);
-      }
-
+      row.className = 'ai-msg-row' + (role === 'user' ? ' user' : '');
+      const av = document.createElement('div');
+      av.className = 'ai-msg-avatar ' + (role === 'user' ? 'user' : 'ai');
+      av.textContent = role === 'user' ? '👤' : '🤖';
+      row.appendChild(av);
       const bubble = document.createElement('div');
       bubble.className = 'ai-msg-bubble ' + (role === 'user' ? 'user' : 'ai');
-
       if (role === 'assistant') {
         bubble.innerHTML = md2html(text);
-        // Copy button
-        const copyBtn = document.createElement('button');
-        copyBtn.className = 'ai-msg-copy';
-        copyBtn.textContent = '📋';
-        copyBtn.title = '复制';
-        copyBtn.addEventListener('click', () => {
-          navigator.clipboard.writeText(text).then(() => {
-            copyBtn.textContent = '✓';
-            setTimeout(() => { copyBtn.textContent = '📋'; }, 1500);
-          }).catch(() => {});
-        });
-        bubble.appendChild(copyBtn);
-      } else {
-        bubble.textContent = text;
-      }
-
+        const cp = document.createElement('button');
+        cp.className = 'ai-msg-copy'; cp.textContent = '📋';
+        cp.addEventListener('click', () => { navigator.clipboard.writeText(text).then(() => { cp.textContent = '✓'; setTimeout(() => cp.textContent = '📋', 1500); }).catch(() => {}); });
+        bubble.appendChild(cp);
+      } else { bubble.textContent = text; }
       row.appendChild(bubble);
-
-      if (role === 'user') {
-        const avatar = document.createElement('div');
-        avatar.className = 'ai-msg-avatar user';
-        avatar.textContent = '👤';
-        row.appendChild(avatar);
-      }
-
-      chatBody.appendChild(row);
-      chatBody.scrollTop = chatBody.scrollHeight;
+      body.appendChild(row);
+      body.scrollTop = body.scrollHeight;
     };
 
     const showTyping = () => {
-      const div = document.createElement('div');
-      div.className = 'ai-typing';
-      div.innerHTML = '<span></span><span></span><span></span>';
-      div.id = 'ai-typing';
-      chatBody.appendChild(div);
-      chatBody.scrollTop = chatBody.scrollHeight;
+      const d = document.createElement('div'); d.className = 'ai-typing';
+      d.innerHTML = '<span></span><span></span><span></span>'; d.id = 'ai-typing';
+      body.appendChild(d); body.scrollTop = body.scrollHeight;
     };
+    const hideTyping = () => { const e = document.getElementById('ai-typing'); if (e) e.remove(); };
+    const clearWelcome = () => { const w = body.querySelector('.ai-dialog-welcome'); if (w) w.style.display = 'none'; };
 
-    const hideTyping = () => {
-      const el = document.getElementById('ai-typing');
-      if (el) el.remove();
-    };
+    const send = async (q) => {
+      const key = getApiKey();
+      if (!key) { settingsBar.style.display = 'flex'; apiKeyInput.focus(); renderMsg('system', '请先设置DeepSeek API Key。点击右上角⚙️按钮，粘贴Key后保存。'); return; }
+      if (!q.trim()) return;
+      clearWelcome(); renderMsg('user', q);
+      chatHistory.push({ role: 'user', content: q }); showTyping();
 
-    // Clear welcome when first message is sent
-    const clearWelcome = () => {
-      const welcome = chatBody.querySelector('.ai-chat-welcome');
-      if (welcome) welcome.style.display = 'none';
-    };
-
-    // Main send function
-    const sendToAI = async (question) => {
-      const apiKey = getApiKey();
-      if (!apiKey) {
-        renderMessage('system', '请先设置API Key。去 platform.deepseek.com 注册获取，粘贴到上方输入框即可。新用户有免费额度。');
-        return;
-      }
-      if (!question.trim()) return;
-
-      clearWelcome();
-      renderMessage('user', question);
-      chatHistory.push({ role: 'user', content: question });
-      showTyping();
-
-      const messages = [
-        { role: 'system', content: systemPrompt },
-        ...chatHistory.slice(-8)
-      ];
-
+      const msgs = [{ role: 'system', content: systemPrompt }, ...chatHistory.slice(-8)];
       try {
         const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
-          body: JSON.stringify({ model: 'deepseek-chat', messages, temperature: 0.7, max_tokens: 1000 })
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+          body: JSON.stringify({ model: 'deepseek-chat', messages: msgs, temperature: 0.7, max_tokens: 1000 })
         });
-
         hideTyping();
-
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          const msg = err.error?.message || res.statusText;
-          renderMessage('system', '请求失败：' + msg + '。请检查API Key是否正确，或稍后重试。');
-          return;
-        }
-
+        if (!res.ok) { const err = await res.json().catch(() => ({})); renderMsg('system', '请求失败：' + (err.error?.message || res.statusText)); return; }
         const data = await res.json();
-        const reply = data.choices?.[0]?.message?.content || '（未获取到回复）';
-        renderMessage('assistant', reply);
-        chatHistory.push({ role: 'assistant', content: reply });
-      } catch (e) {
-        hideTyping();
-        renderMessage('system', '网络连接失败：' + e.message + '。请检查网络后重试。');
-      }
+        const reply = data.choices?.[0]?.message?.content || '';
+        renderMsg('assistant', reply); chatHistory.push({ role: 'assistant', content: reply });
+      } catch (e) { hideTyping(); renderMsg('system', '网络错误：' + e.message); }
     };
 
-    // Event bindings
-    floatBtn.addEventListener('click', () => {
-      chatPanel.classList.toggle('open');
-      if (chatPanel.classList.contains('open')) chatInput.focus();
-    });
+    // Events
+    floatBtn.addEventListener('click', () => { overlay.classList.add('open'); input.focus(); });
+    closeBtn.addEventListener('click', () => overlay.classList.remove('open'));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('open'); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') overlay.classList.remove('open'); });
 
-    closeBtn.addEventListener('click', () => chatPanel.classList.remove('open'));
-
-    newChatBtn.addEventListener('click', () => {
+    newBtn.addEventListener('click', () => {
       chatHistory = [];
-      chatBody.innerHTML = `
-        <div class="ai-chat-welcome">
-          <div class="ai-welcome-icon">🤖</div>
-          <p>我是你的AI学习助手，可以解答医学影像学和卫生法学的问题</p>
-          <div class="ai-suggestions" id="ai-suggestions-new"></div>
-        </div>`;
-      // Re-bind suggestions
-      const newSugg = document.getElementById('ai-suggestions-new');
-      if (newSugg) {
-        newSugg.innerHTML = suggestions.map(s => `<button>${s}</button>`).join('');
-        newSugg.addEventListener('click', (e) => {
-          if (e.target.tagName === 'BUTTON') sendToAI(e.target.textContent);
-        });
-      }
+      body.innerHTML = `<div class="ai-dialog-welcome"><div class="ai-welcome-big">🤖</div><h3>有什么可以帮你的？</h3><p>AI学习助手，解答医学影像学和卫生法学问题</p><div class="ai-suggestions" id="ai-suggestions-new"></div></div>`;
+      const ns = document.getElementById('ai-suggestions-new');
+      if (ns) { ns.innerHTML = suggestions.map(s => `<button>${s}</button>`).join(''); ns.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') send(e.target.textContent); }); }
     });
 
-    sendBtn.addEventListener('click', () => {
-      const q = chatInput.value;
-      chatInput.value = '';
-      sendToAI(q);
-    });
+    sendBtn.addEventListener('click', () => { const q = input.value; input.value = ''; send(q); });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); const q = input.value; input.value = ''; send(q); } });
 
-    chatInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        const q = chatInput.value;
-        chatInput.value = '';
-        sendToAI(q);
-      }
-    });
-
-    // Restore chat history
+    // Restore history
     try {
       const saved = localStorage.getItem('medreview_chathistory');
       if (saved) {
         const msgs = JSON.parse(saved);
         if (msgs.length > 0) {
           clearWelcome();
-          msgs.forEach(m => {
-            chatHistory.push(m);
-            if (m.role === 'user' || m.role === 'assistant') {
-              renderMessage(m.role, m.content);
-            }
-          });
+          msgs.forEach(m => { chatHistory.push(m); if (m.role === 'user' || m.role === 'assistant') renderMsg(m.role, m.content); });
         }
       }
     } catch {}
 
-    // Save chat history periodically
-    setInterval(() => {
-      if (chatHistory.length > 0) {
-        localStorage.setItem('medreview_chathistory', JSON.stringify(chatHistory.slice(-20)));
-      }
-    }, 3000);
+    setInterval(() => { if (chatHistory.length > 0) localStorage.setItem('medreview_chathistory', JSON.stringify(chatHistory.slice(-20))); }, 3000);
 
-    // Expose to app
-    this._askAI = (question) => {
-      if (!chatPanel.classList.contains('open')) chatPanel.classList.add('open');
-      sendToAI(question);
-    };
-
-    updateApiStatus();
+    this._askAI = (q) => { overlay.classList.add('open'); send(q); };
+    updateStatus();
   },
 
   _loadBookmarks() {
