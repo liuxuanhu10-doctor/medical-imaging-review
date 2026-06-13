@@ -162,8 +162,24 @@ ul, ol { list-style: none; }
 
 .sidebar-nav a .icon { font-size: 1.1rem; width: 24px; text-align: center; }
 
+/* Sidebar stats */
+.sidebar-stats {
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+  display: flex; flex-direction: column; gap: 10px;
+}
+.stat-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 8px; border-radius: var(--radius-sm);
+  background: var(--bg);
+}
+.stat-icon { font-size: 1.1rem; width: 24px; text-align: center; }
+.stat-val { font-size: var(--font-md); font-weight: 700; color: var(--accent-dark); }
+.stat-unit { font-size: var(--font-xs); color: var(--text-muted); }
+.stat-label { font-size: 0.7rem; color: var(--text-muted); margin-left: auto; }
+
 .sidebar-footer {
-  padding: 12px 20px;
+  padding: 10px 20px;
   border-top: 1px solid var(--border);
   font-size: var(--font-xs);
   color: var(--text-muted);

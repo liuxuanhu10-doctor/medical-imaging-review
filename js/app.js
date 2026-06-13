@@ -29,6 +29,7 @@ const App = {
     if (this.fontSize !== 'md') {
       document.documentElement.classList.add('font-' + this.fontSize);
     }
+    this._initClock();
     try { this._initAIChat(); } catch(e) { console.log('AI init error:', e); }
     try { this._initPomodoro(); } catch(e) { console.log('Pomo init error:', e); }
   },
@@ -183,6 +184,27 @@ const App = {
     }
     update();
     setInterval(update, 1000);
+    this._updateSidebarStats();
+  },
+
+  _updateSidebarStats() {
+    var focusMin = parseInt(localStorage.getItem('medreview_focus_min')||'0');
+    var elF = document.getElementById('stat-focus'); if (elF) elF.textContent = focusMin;
+    this._countAndUpdateStats();
+  },
+
+  _countAndUpdateStats() {
+    if (!this.currentCourse) return;
+    var doneCount = 0;
+    function countDone(topics) {
+      for (var i=0; i<topics.length; i++) {
+        if (Storage.isTopicDone(this.currentCourse.id, topics[i].id)) doneCount++;
+        if (topics[i].subtopics) countDone.call(this, topics[i].subtopics);
+      }
+    }
+    if (this.currentCourse.topics) countDone.call(this, this.currentCourse.topics);
+    var elD = document.getElementById('stat-done'); if (elD) elD.textContent = doneCount;
+    var elB = document.getElementById('stat-bookmarks'); if (elB) elB.textContent = this.bookmarks.size;
   },
 
   /* ===== Pomodoro Timer ===== */
@@ -282,6 +304,10 @@ const App = {
     }
 
     function notify(msg) {
+      var mins = Math.round(getWorkSecs() / 60);
+      var total = parseInt(localStorage.getItem('medreview_focus_min')||'0') + mins;
+      localStorage.setItem('medreview_focus_min', total);
+      var elF = document.getElementById('stat-focus'); if (elF) elF.textContent = total;
       if (Notification && Notification.permission === 'granted') { new Notification('🍅 番茄钟', { body: msg }); }
       alert(msg);
     }
@@ -320,7 +346,6 @@ const App = {
     }
 
     updateDisplay();
-    this._initClock();
   },
 
   _loadBookmarks() {
@@ -341,6 +366,7 @@ const App = {
       this.bookmarks.add(topicId);
     }
     this._saveBookmarks();
+    this._countAndUpdateStats();
     this._renderTopicActions(); this._renderNotes();
   },
 
@@ -348,6 +374,7 @@ const App = {
 
   _toggleTopicDone(topicId) {
     Storage.toggleTopicDone(this.currentCourse.id, topicId);
+    this._countAndUpdateStats();
     this._renderTopicActions(); this._renderNotes();
   },
 
@@ -478,22 +505,13 @@ const App = {
     }
 
     grid.innerHTML = this.courses
-      .map((c) => {
-        const progress = Storage.getTopicProgress(c.id, c.totalCards || 0);
-        return `
+      .map((c) => `
         <div class="course-card" data-course-id="${c.id}">
           <div class="card-icon">${c.icon || '📖'}</div>
           <div class="card-category">${this._escape(c.category)}</div>
           <h3>${this._escape(c.title)}</h3>
           <p>${this._escape(c.description || '')}</p>
-          <div class="card-progress">
-            <div class="progress-bar">
-              <div class="progress-fill" style="width:${progress}%"></div>
-            </div>
-            <div class="progress-text">学习进度 ${progress}%</div>
-          </div>
-        </div>`;
-      })
+        </div>`)
       .join('');
 
     // Bind click events

@@ -22,8 +22,24 @@
           <span class="icon">🏠</span> 课程列表
         </a>
       </nav>
+      <div class="sidebar-stats" id="sidebar-stats">
+        <div class="stat-item">
+          <span class="stat-icon">🍅</span>
+          <div><span class="stat-val" id="stat-focus">0</span><span class="stat-unit"> 分钟</span></div>
+          <div class="stat-label">累计专注</div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon">📝</span>
+          <div><span class="stat-val" id="stat-done">0</span><span class="stat-unit"> 个</span></div>
+          <div class="stat-label">已学知识点</div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon">⭐</span>
+          <div><span class="stat-val" id="stat-bookmarks">0</span><span class="stat-unit"> 个</span></div>
+          <div class="stat-label">收藏知识</div>
+        </div>
+      </div>
       <div class="sidebar-footer">
-        <p>医学课程知识复习</p>
         <div style="display:flex;gap:4px">
           <button class="theme-toggle" id="theme-toggle-desktop" title="切换暗色模式">🌓</button>
           <button id="ai-key-btn-desktop" style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;color:#6b5a4a;background:none;border:none" title="设置AI Key">🔑</button>
