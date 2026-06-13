@@ -63,21 +63,27 @@
 
       <!-- AI Chat Panel -->
       <div class="ai-chat" id="ai-chat">
-        <div class="ai-chat-header" id="ai-chat-header">
+        <div class="ai-chat-header">
           <span>🤖 AI 学习助手</span>
-          <div class="ai-chat-header-btns">
-            <button class="ai-chat-mini-btn" id="ai-clear-chat" title="清空对话">🔄</button>
-            <button class="ai-chat-mini-btn" id="ai-close-chat" title="最小化">—</button>
+          <div class="ai-chat-header-actions">
+            <button class="ai-chat-header-btn" id="ai-new-chat" title="新建对话">+</button>
+            <button class="ai-chat-header-btn" id="ai-close-chat" title="关闭">✕</button>
           </div>
         </div>
+        <div class="ai-api-bar">
+          <input type="password" id="ai-api-key" placeholder="粘贴 DeepSeek API Key..." autocomplete="off">
+          <span class="ai-api-status no" id="ai-api-status">未设置</span>
+        </div>
         <div class="ai-chat-body" id="ai-chat-body">
-          <div class="ai-chat-msg ai-msg-system">你好！我是AI学习助手。选中任意知识点后点击「🤖 提问」，或直接输入问题。</div>
-          <div class="ai-chat-msg ai-msg-system ai-msg-api-hint" id="ai-api-hint">首次使用请设置API Key：<a href="https://platform.deepseek.com/api_keys" target="_blank">获取DeepSeek Key</a></div>
+          <div class="ai-chat-welcome">
+            <div class="ai-welcome-icon">🤖</div>
+            <p>我是你的AI学习助手，可以解答医学影像学和卫生法学的问题</p>
+            <div class="ai-suggestions" id="ai-suggestions"></div>
+          </div>
         </div>
         <div class="ai-chat-input-row">
-          <input type="password" id="ai-api-key" placeholder="输入API Key（仅存本地）" autocomplete="off">
-          <input type="text" id="ai-chat-input" placeholder="输入问题..." autocomplete="off">
-          <button id="ai-chat-send">发送</button>
+          <input type="text" id="ai-chat-input" placeholder="输入你的问题..." autocomplete="off">
+          <button class="ai-chat-send-btn" id="ai-send-btn">↑</button>
         </div>
       </div>
 

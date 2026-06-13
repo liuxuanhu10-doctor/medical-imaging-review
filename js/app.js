@@ -38,142 +38,281 @@ const App = {
     const chatPanel = document.getElementById('ai-chat');
     const chatBody = document.getElementById('ai-chat-body');
     const chatInput = document.getElementById('ai-chat-input');
-    const sendBtn = document.getElementById('ai-chat-send');
+    const sendBtn = document.getElementById('ai-send-btn');
     const apiKeyInput = document.getElementById('ai-api-key');
+    const apiStatus = document.getElementById('ai-api-status');
     const closeBtn = document.getElementById('ai-close-chat');
-    const clearBtn = document.getElementById('ai-clear-chat');
-    const apiHint = document.getElementById('ai-api-hint');
+    const newChatBtn = document.getElementById('ai-new-chat');
+    const suggestionsEl = document.getElementById('ai-suggestions');
 
     if (!floatBtn || !chatPanel) return;
 
-    // Restore API key
+    // State
+    let chatHistory = [];
+    const systemPrompt = '你是一个专业的医学复习助手。回答简洁、条理清晰、使用中文。如果问疾病，列出：临床特点、影像学表现（按X线/CT/MRI/超声分点）、鉴别诊断。如果问法律，列出法律依据和要点。';
+
+    // Simple markdown to HTML
+    const md2html = (text) => {
+      let html = text
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*([^*]+)\*/g, '<em>$1</em>')
+        .replace(/^### (.+)$/gm, '<strong>$1</strong>')
+        .replace(/^## (.+)$/gm, '<strong>$1</strong>')
+        .replace(/^# (.+)$/gm, '<strong>$1</strong>')
+        .replace(/^- (.+)$/gm, '<li>$1</li>')
+        .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
+        .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+        .replace(/<\/li>\s*<li>/g, '</li><li>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n/g, '<br>');
+      html = '<p>' + html + '</p>';
+      html = html.replace(/<p>\s*<ul>/g, '<ul>').replace(/<\/ul>\s*<\/p>/g, '</ul>');
+      html = html.replace(/<p>\s*<\/p>/g, '');
+      return html;
+    };
+
+    // API Key management
+    const getApiKey = () => {
+      const key = (apiKeyInput && apiKeyInput.value.trim()) || localStorage.getItem('medreview_apikey');
+      return key;
+    };
+
+    const updateApiStatus = () => {
+      const key = getApiKey();
+      if (key) {
+        apiStatus.textContent = '已设置 ✓';
+        apiStatus.className = 'ai-api-status ok';
+        if (floatBtn) floatBtn.classList.add('has-key');
+        // Hide welcome suggestions if key is set
+        const welcome = chatBody.querySelector('.ai-chat-welcome');
+        if (welcome && chatHistory.length === 0) {
+          welcome.style.display = 'flex';
+        }
+      } else {
+        apiStatus.textContent = '未设置';
+        apiStatus.className = 'ai-api-status no';
+        if (floatBtn) floatBtn.classList.remove('has-key');
+      }
+    };
+
+    // Restore key
     const savedKey = localStorage.getItem('medreview_apikey');
     if (savedKey && apiKeyInput) {
       apiKeyInput.value = savedKey;
-      if (apiHint) apiHint.style.display = 'none';
     }
+    updateApiStatus();
 
-    // Toggle panel
-    floatBtn.addEventListener('click', () => {
-      chatPanel.classList.toggle('open');
-      if (chatPanel.classList.contains('open')) {
-        chatInput.focus();
-      }
-    });
-
-    closeBtn.addEventListener('click', () => chatPanel.classList.remove('open'));
-
-    clearBtn.addEventListener('click', () => {
-      chatBody.innerHTML = '<div class="ai-chat-msg ai-msg-system">对话已清空，有什么可以帮你的？</div>';
-    });
-
-    // Save API key
     if (apiKeyInput) {
-      apiKeyInput.addEventListener('change', () => {
-        localStorage.setItem('medreview_apikey', apiKeyInput.value.trim());
-        if (apiHint && apiKeyInput.value.trim()) apiHint.style.display = 'none';
+      apiKeyInput.addEventListener('input', () => {
+        const val = apiKeyInput.value.trim();
+        if (val) localStorage.setItem('medreview_apikey', val);
+        updateApiStatus();
       });
     }
 
-    // Chat history for context
-    const chatHistory = [];
+    // Suggestions
+    const suggestions = [
+      '肝癌的CT表现和鉴别诊断',
+      '硬膜外血肿和硬膜下血肿怎么区分',
+      '肺结核分型及各型X线表现',
+      '医疗事故分几级',
+      '大叶性肺炎的影像学表现',
+    ];
+    if (suggestionsEl) {
+      suggestionsEl.innerHTML = suggestions.map(s => `<button>${s}</button>`).join('');
+      suggestionsEl.addEventListener('click', (e) => {
+        if (e.target.tagName === 'BUTTON') {
+          sendToAI(e.target.textContent);
+        }
+      });
+    }
 
-    const addMessage = (role, text) => {
-      const cls = role === 'user' ? 'ai-msg-user' : role === 'assistant' ? 'ai-msg-ai' : 'ai-msg-system';
-      const div = document.createElement('div');
-      div.className = 'ai-chat-msg ' + cls;
-      div.textContent = text;
-      chatBody.appendChild(div);
+    // Render message
+    const renderMessage = (role, text) => {
+      const row = document.createElement('div');
+      row.className = 'ai-msg-row ' + (role === 'user' ? 'user' : '');
+
+      if (role !== 'user') {
+        const avatar = document.createElement('div');
+        avatar.className = 'ai-msg-avatar ai';
+        avatar.textContent = '🤖';
+        row.appendChild(avatar);
+      }
+
+      const bubble = document.createElement('div');
+      bubble.className = 'ai-msg-bubble ' + (role === 'user' ? 'user' : 'ai');
+
+      if (role === 'assistant') {
+        bubble.innerHTML = md2html(text);
+        // Copy button
+        const copyBtn = document.createElement('button');
+        copyBtn.className = 'ai-msg-copy';
+        copyBtn.textContent = '📋';
+        copyBtn.title = '复制';
+        copyBtn.addEventListener('click', () => {
+          navigator.clipboard.writeText(text).then(() => {
+            copyBtn.textContent = '✓';
+            setTimeout(() => { copyBtn.textContent = '📋'; }, 1500);
+          }).catch(() => {});
+        });
+        bubble.appendChild(copyBtn);
+      } else {
+        bubble.textContent = text;
+      }
+
+      row.appendChild(bubble);
+
+      if (role === 'user') {
+        const avatar = document.createElement('div');
+        avatar.className = 'ai-msg-avatar user';
+        avatar.textContent = '👤';
+        row.appendChild(avatar);
+      }
+
+      chatBody.appendChild(row);
       chatBody.scrollTop = chatBody.scrollHeight;
-      return div;
     };
 
     const showTyping = () => {
       const div = document.createElement('div');
-      div.className = 'ai-chat-typing';
+      div.className = 'ai-typing';
       div.innerHTML = '<span></span><span></span><span></span>';
-      div.id = 'ai-typing-indicator';
+      div.id = 'ai-typing';
       chatBody.appendChild(div);
       chatBody.scrollTop = chatBody.scrollHeight;
     };
 
     const hideTyping = () => {
-      const el = document.getElementById('ai-typing-indicator');
+      const el = document.getElementById('ai-typing');
       if (el) el.remove();
     };
 
+    // Clear welcome when first message is sent
+    const clearWelcome = () => {
+      const welcome = chatBody.querySelector('.ai-chat-welcome');
+      if (welcome) welcome.style.display = 'none';
+    };
+
+    // Main send function
     const sendToAI = async (question) => {
-      const apiKey = (apiKeyInput && apiKeyInput.value.trim()) || savedKey || localStorage.getItem('medreview_apikey');
+      const apiKey = getApiKey();
       if (!apiKey) {
-        addMessage('system', '请先设置API Key。去 platform.deepseek.com 注册获取（新用户送免费额度），粘贴到上方输入框。');
+        renderMessage('system', '请先设置API Key。去 platform.deepseek.com 注册获取，粘贴到上方输入框即可。新用户有免费额度。');
         return;
       }
       if (!question.trim()) return;
 
-      addMessage('user', question);
+      clearWelcome();
+      renderMessage('user', question);
       chatHistory.push({ role: 'user', content: question });
       showTyping();
 
-      // Build messages with context
       const messages = [
-        { role: 'system', content: '你是一个医学复习助手，帮助医学生解答医学影像学和卫生法学相关的问题。回答简洁专业，条理清晰。如果用户问的是具体疾病，请列出影像学表现要点。' },
-        ...chatHistory.slice(-6)
+        { role: 'system', content: systemPrompt },
+        ...chatHistory.slice(-8)
       ];
 
       try {
         const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + apiKey
-          },
-          body: JSON.stringify({
-            model: 'deepseek-chat',
-            messages: messages,
-            temperature: 0.7,
-            max_tokens: 800
-          })
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+          body: JSON.stringify({ model: 'deepseek-chat', messages, temperature: 0.7, max_tokens: 1000 })
         });
 
         hideTyping();
 
         if (!res.ok) {
           const err = await res.json().catch(() => ({}));
-          addMessage('system', 'API错误：' + (err.error?.message || res.status + ' ' + res.statusText) + '。请检查API Key是否正确。');
+          const msg = err.error?.message || res.statusText;
+          renderMessage('system', '请求失败：' + msg + '。请检查API Key是否正确，或稍后重试。');
           return;
         }
 
         const data = await res.json();
         const reply = data.choices?.[0]?.message?.content || '（未获取到回复）';
-        addMessage('assistant', reply);
+        renderMessage('assistant', reply);
         chatHistory.push({ role: 'assistant', content: reply });
       } catch (e) {
         hideTyping();
-        addMessage('system', '网络错误：' + e.message + '。请检查网络连接。');
+        renderMessage('system', '网络连接失败：' + e.message + '。请检查网络后重试。');
       }
     };
 
-    // Send button
+    // Event bindings
+    floatBtn.addEventListener('click', () => {
+      chatPanel.classList.toggle('open');
+      if (chatPanel.classList.contains('open')) chatInput.focus();
+    });
+
+    closeBtn.addEventListener('click', () => chatPanel.classList.remove('open'));
+
+    newChatBtn.addEventListener('click', () => {
+      chatHistory = [];
+      chatBody.innerHTML = `
+        <div class="ai-chat-welcome">
+          <div class="ai-welcome-icon">🤖</div>
+          <p>我是你的AI学习助手，可以解答医学影像学和卫生法学的问题</p>
+          <div class="ai-suggestions" id="ai-suggestions-new"></div>
+        </div>`;
+      // Re-bind suggestions
+      const newSugg = document.getElementById('ai-suggestions-new');
+      if (newSugg) {
+        newSugg.innerHTML = suggestions.map(s => `<button>${s}</button>`).join('');
+        newSugg.addEventListener('click', (e) => {
+          if (e.target.tagName === 'BUTTON') sendToAI(e.target.textContent);
+        });
+      }
+    });
+
     sendBtn.addEventListener('click', () => {
-      sendToAI(chatInput.value);
+      const q = chatInput.value;
       chatInput.value = '';
+      sendToAI(q);
     });
 
     chatInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        sendToAI(chatInput.value);
+        const q = chatInput.value;
         chatInput.value = '';
+        sendToAI(q);
       }
     });
 
-    // Expose method to ask with context
-    this._askAI = (question) => {
-      if (!chatPanel.classList.contains('open')) {
-        chatPanel.classList.add('open');
+    // Restore chat history
+    try {
+      const saved = localStorage.getItem('medreview_chathistory');
+      if (saved) {
+        const msgs = JSON.parse(saved);
+        if (msgs.length > 0) {
+          clearWelcome();
+          msgs.forEach(m => {
+            chatHistory.push(m);
+            if (m.role === 'user' || m.role === 'assistant') {
+              renderMessage(m.role, m.content);
+            }
+          });
+        }
       }
+    } catch {}
+
+    // Save chat history periodically
+    setInterval(() => {
+      if (chatHistory.length > 0) {
+        localStorage.setItem('medreview_chathistory', JSON.stringify(chatHistory.slice(-20)));
+      }
+    }, 3000);
+
+    // Expose to app
+    this._askAI = (question) => {
+      if (!chatPanel.classList.contains('open')) chatPanel.classList.add('open');
       sendToAI(question);
     };
+
+    updateApiStatus();
   },
 
   _loadBookmarks() {
