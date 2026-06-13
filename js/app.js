@@ -34,28 +34,61 @@ const App = {
 
   /* ===== AI Chat ===== */
   _initAIChat() {
-    const floatBtn = document.getElementById('ai-float-btn');
-    const overlay = document.getElementById('ai-overlay');
-    const body = document.getElementById('ai-dialog-body');
-    const input = document.getElementById('ai-chat-input');
-    const sendBtn = document.getElementById('ai-send-btn');
-    const closeBtn = document.getElementById('ai-close-btn');
-    const newBtn = document.getElementById('ai-new-chat-btn');
-    const settingsBtn = document.getElementById('ai-settings-btn');
-    const settingsBar = document.getElementById('ai-settings-bar');
-    const apiKeyInput = document.getElementById('ai-api-key');
-    const saveKeyBtn = document.getElementById('ai-save-key');
-    const statusEl = document.getElementById('ai-dialog-status');
-    const suggestionsEl = document.getElementById('ai-suggestions');
+    // Build float button
+    const floatBtn = document.createElement('button');
+    floatBtn.className = 'ai-float-btn';
+    floatBtn.textContent = '🤖';
+    floatBtn.title = 'AI助手';
+    document.body.appendChild(floatBtn);
 
-    if (!floatBtn || !overlay) return;
+    // Build overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'ai-overlay';
+    overlay.id = 'ai-chat-overlay';
+
+    // Build dialog
+    const dialog = document.createElement('div');
+    dialog.className = 'ai-dialog';
+    dialog.innerHTML = `
+      <div class="ai-dialog-header">
+        <div class="ai-dialog-title">
+          <span class="ai-dialog-avatar">🤖</span>
+          <div><strong>AI 学习助手</strong><small id="ai-dialog-status">DeepSeek · 未连接</small></div>
+        </div>
+        <div class="ai-dialog-actions">
+          <button class="ai-dialog-btn" id="ai-settings-btn" title="设置Key">⚙️</button>
+          <button class="ai-dialog-btn" id="ai-new-chat-btn" title="新建">+</button>
+          <button class="ai-dialog-btn" id="ai-close-btn" title="关闭">✕</button>
+        </div>
+      </div>
+      <div class="ai-settings-bar" id="ai-settings-bar">
+        <input type="password" id="ai-api-key" placeholder="粘贴 DeepSeek API Key (sk-...)" autocomplete="off">
+        <button id="ai-save-key">保存</button>
+        <a href="https://platform.deepseek.com/api_keys" target="_blank">获取Key →</a>
+      </div>
+      <div class="ai-dialog-body" id="ai-dialog-body">
+        <div class="ai-dialog-welcome"><div class="ai-welcome-big">🤖</div><h3>有什么可以帮你的？</h3><p>AI学习助手，解答医学影像学和卫生法学问题</p><div class="ai-suggestions" id="ai-suggestions"></div></div>
+      </div>
+      <div class="ai-dialog-input">
+        <input type="text" id="ai-chat-input" placeholder="输入问题，回车发送..." autocomplete="off">
+        <button id="ai-send-btn">↑</button>
+      </div>`;
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+
+    // Get refs
+    const body = dialog.querySelector('#ai-dialog-body');
+    const input = dialog.querySelector('#ai-chat-input');
+    const statusEl = dialog.querySelector('#ai-dialog-status');
+    const settingsBar = dialog.querySelector('#ai-settings-bar');
+    const apiKeyInput = dialog.querySelector('#ai-api-key');
+    const suggestionsEl = dialog.querySelector('#ai-suggestions');
 
     let chatHistory = [];
     const systemPrompt = '你是一个专业的医学复习助手。回答简洁、条理清晰、使用中文。如果问疾病，列出：临床特点、影像学表现（按X线/CT/MRI/超声分点）、鉴别诊断。如果问法律，列出法律依据和要点。';
 
     const md2html = (text) => {
       let html = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      html = html.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
       html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
       html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
       html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
@@ -66,72 +99,44 @@ const App = {
     };
 
     const getApiKey = () => (apiKeyInput && apiKeyInput.value.trim()) || localStorage.getItem('medreview_apikey') || '';
+    const updateStatus = () => { statusEl.textContent = 'DeepSeek · ' + (getApiKey() ? '已连接' : '未连接'); };
 
-    const updateStatus = () => {
-      const has = !!getApiKey();
-      statusEl.textContent = 'DeepSeek · ' + (has ? '已连接 ✓' : '未连接');
-      if (floatBtn) floatBtn.classList.toggle('has-key', has);
-    };
-
-    // Restore
     const savedKey = localStorage.getItem('medreview_apikey');
     if (savedKey && apiKeyInput) apiKeyInput.value = savedKey;
     updateStatus();
 
-    // Settings toggle
-    settingsBtn.addEventListener('click', () => {
-      settingsBar.classList.toggle('show');
-      if (settingsBar.classList.contains('show')) apiKeyInput.focus();
-    });
-
-    saveKeyBtn.addEventListener('click', () => {
-      const val = apiKeyInput.value.trim();
-      if (val) { localStorage.setItem('medreview_apikey', val); updateStatus(); settingsBar.classList.remove('show'); }
-    });
-
-    // Suggestions
     const suggestions = ['肝癌CT表现和鉴别', '硬膜外vs硬膜下血肿', '肺结核分型及X线', '医疗事故分几级', '大叶性肺炎影像'];
-    if (suggestionsEl) {
-      suggestionsEl.innerHTML = suggestions.map(s => `<button>${s}</button>`).join('');
-      suggestionsEl.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') send(e.target.textContent); });
-    }
+    suggestionsEl.innerHTML = suggestions.map(s => `<button>${s}</button>`).join('');
 
     const renderMsg = (role, text) => {
       const row = document.createElement('div');
       row.className = 'ai-msg-row' + (role === 'user' ? ' user' : '');
-      const av = document.createElement('div');
-      av.className = 'ai-msg-avatar ' + (role === 'user' ? 'user' : 'ai');
-      av.textContent = role === 'user' ? '👤' : '🤖';
-      row.appendChild(av);
+      const av = document.createElement('div'); av.className = 'ai-msg-avatar ' + (role === 'user' ? 'user' : 'ai');
+      av.textContent = role === 'user' ? '👤' : '🤖'; row.appendChild(av);
       const bubble = document.createElement('div');
       bubble.className = 'ai-msg-bubble ' + (role === 'user' ? 'user' : 'ai');
       if (role === 'assistant') {
         bubble.innerHTML = md2html(text);
-        const cp = document.createElement('button');
-        cp.className = 'ai-msg-copy'; cp.textContent = '📋';
-        cp.addEventListener('click', () => { navigator.clipboard.writeText(text).then(() => { cp.textContent = '✓'; setTimeout(() => cp.textContent = '📋', 1500); }).catch(() => {}); });
+        const cp = document.createElement('button'); cp.className = 'ai-msg-copy'; cp.textContent = '📋';
+        cp.addEventListener('click', () => { navigator.clipboard.writeText(text).then(() => { cp.textContent = '✓'; setTimeout(() => cp.textContent = '📋', 1500); }); });
         bubble.appendChild(cp);
       } else { bubble.textContent = text; }
-      row.appendChild(bubble);
-      body.appendChild(row);
-      body.scrollTop = body.scrollHeight;
+      row.appendChild(bubble); body.appendChild(row); body.scrollTop = body.scrollHeight;
     };
 
     const showTyping = () => {
       const d = document.createElement('div'); d.className = 'ai-typing';
-      d.innerHTML = '<span></span><span></span><span></span>'; d.id = 'ai-typing';
+      d.innerHTML = '<span></span><span></span><span></span>';
       body.appendChild(d); body.scrollTop = body.scrollHeight;
     };
-    const hideTyping = () => { const e = document.getElementById('ai-typing'); if (e) e.remove(); };
-    const clearWelcome = () => { const w = body.querySelector('.ai-dialog-welcome'); if (w) w.style.display = 'none'; };
+    const hideTyping = () => { const e = body.querySelector('.ai-typing'); if (e) e.remove(); };
 
     const send = async (q) => {
       const key = getApiKey();
-      if (!key) { settingsBar.classList.add('show'); apiKeyInput.focus(); renderMsg('system', '请先设置DeepSeek API Key。点击右上角⚙️按钮，粘贴Key后保存。'); return; }
+      if (!key) { settingsBar.classList.add('show'); renderMsg('system', '请设置DeepSeek API Key。点击⚙️，粘贴Key后保存。'); return; }
       if (!q.trim()) return;
-      clearWelcome(); renderMsg('user', q);
-      chatHistory.push({ role: 'user', content: q }); showTyping();
-
+      const w = body.querySelector('.ai-dialog-welcome'); if (w) w.style.display = 'none';
+      renderMsg('user', q); chatHistory.push({ role: 'user', content: q }); showTyping();
       const msgs = [{ role: 'system', content: systemPrompt }, ...chatHistory.slice(-8)];
       try {
         const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
@@ -139,28 +144,27 @@ const App = {
           body: JSON.stringify({ model: 'deepseek-chat', messages: msgs, temperature: 0.7, max_tokens: 1000 })
         });
         hideTyping();
-        if (!res.ok) { const err = await res.json().catch(() => ({})); renderMsg('system', '请求失败：' + (err.error?.message || res.statusText)); return; }
-        const data = await res.json();
-        const reply = data.choices?.[0]?.message?.content || '';
+        if (!res.ok) { const err = await res.json().catch(() => ({})); renderMsg('system', '失败：' + (err.error?.message || res.statusText)); return; }
+        const data = await res.json(); const reply = data.choices?.[0]?.message?.content || '';
         renderMsg('assistant', reply); chatHistory.push({ role: 'assistant', content: reply });
       } catch (e) { hideTyping(); renderMsg('system', '网络错误：' + e.message); }
     };
 
     // Events
     floatBtn.addEventListener('click', () => { overlay.classList.add('open'); input.focus(); });
-    closeBtn.addEventListener('click', () => overlay.classList.remove('open'));
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('open'); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') overlay.classList.remove('open'); });
-
-    newBtn.addEventListener('click', () => {
-      chatHistory = [];
-      body.innerHTML = `<div class="ai-dialog-welcome"><div class="ai-welcome-big">🤖</div><h3>有什么可以帮你的？</h3><p>AI学习助手，解答医学影像学和卫生法学问题</p><div class="ai-suggestions" id="ai-suggestions-new"></div></div>`;
-      const ns = document.getElementById('ai-suggestions-new');
+    dialog.querySelector('#ai-close-btn').addEventListener('click', () => overlay.classList.remove('open'));
+    dialog.querySelector('#ai-new-chat-btn').addEventListener('click', () => {
+      chatHistory = []; body.innerHTML = '<div class="ai-dialog-welcome"><div class="ai-welcome-big">🤖</div><h3>有什么可以帮你的？</h3><p>AI学习助手</p><div class="ai-suggestions" id="ai-suggestions-new"></div></div>';
+      const ns = body.querySelector('#ai-suggestions-new');
       if (ns) { ns.innerHTML = suggestions.map(s => `<button>${s}</button>`).join(''); ns.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') send(e.target.textContent); }); }
     });
-
-    sendBtn.addEventListener('click', () => { const q = input.value; input.value = ''; send(q); });
-    input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); const q = input.value; input.value = ''; send(q); } });
+    dialog.querySelector('#ai-settings-btn').addEventListener('click', () => { settingsBar.classList.toggle('show'); if (settingsBar.classList.contains('show')) apiKeyInput.focus(); });
+    dialog.querySelector('#ai-save-key').addEventListener('click', () => { const v = apiKeyInput.value.trim(); if (v) { localStorage.setItem('medreview_apikey', v); updateStatus(); settingsBar.classList.remove('show'); } });
+    dialog.querySelector('#ai-send-btn').addEventListener('click', () => { const q = input.value; input.value = ''; send(q); });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); const q = input.value; input.value = ''; send(q); } });
+    suggestionsEl.addEventListener('click', (e) => { if (e.target.tagName === 'BUTTON') send(e.target.textContent); });
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('open'); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') overlay.classList.remove('open'); });
 
     this._askAI = (q) => { overlay.classList.add('open'); send(q); };
     updateStatus();

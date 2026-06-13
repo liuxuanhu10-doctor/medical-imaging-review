@@ -62,45 +62,6 @@
       <button class="back-to-top" id="back-to-top" title="回到顶部">↑</button>
     </main>
 
-    <!-- AI Floating Button (outside main, always on top) -->
-    <button class="ai-float-btn" id="ai-float-btn" title="AI助手">🤖</button>
-
-    <!-- AI Chat Modal (outside main, always on top) -->
-    <div class="ai-overlay" id="ai-overlay">
-      <div class="ai-dialog">
-        <div class="ai-dialog-header">
-          <div class="ai-dialog-title">
-            <span class="ai-dialog-avatar">🤖</span>
-            <div>
-              <strong>AI 学习助手</strong>
-              <small id="ai-dialog-status">DeepSeek · 未连接</small>
-            </div>
-          </div>
-          <div class="ai-dialog-actions">
-            <button class="ai-dialog-btn" id="ai-settings-btn" title="设置API Key">⚙️</button>
-            <button class="ai-dialog-btn" id="ai-new-chat-btn" title="新建对话">+</button>
-            <button class="ai-dialog-btn ai-dialog-close" id="ai-close-btn" title="关闭">✕</button>
-          </div>
-        </div>
-        <div class="ai-settings-bar" id="ai-settings-bar" style="display:none">
-          <input type="password" id="ai-api-key" placeholder="粘贴 DeepSeek API Key (sk-...)" autocomplete="off">
-          <button id="ai-save-key">保存</button>
-          <a href="https://platform.deepseek.com/api_keys" target="_blank">获取Key →</a>
-        </div>
-        <div class="ai-dialog-body" id="ai-dialog-body">
-          <div class="ai-dialog-welcome">
-            <div class="ai-welcome-big">🤖</div>
-            <h3>有什么可以帮你的？</h3>
-            <p>AI学习助手，解答医学影像学和卫生法学问题</p>
-            <div class="ai-suggestions" id="ai-suggestions"></div>
-          </div>
-        </div>
-        <div class="ai-dialog-input">
-          <input type="text" id="ai-chat-input" placeholder="输入问题，回车发送..." autocomplete="off">
-          <button id="ai-send-btn" title="发送">↑</button>
-        </div>
-      </div>
-    </div>
 
     <!-- Mobile Bottom Nav -->
     <nav class="bottom-nav">
