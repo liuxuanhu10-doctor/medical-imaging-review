@@ -34,159 +34,138 @@ const App = {
 
   /* ===== AI Chat ===== */
   _initAIChat() {
-    // Use the HTML-embedded float button (guaranteed visible)
-    const floatBtn = document.getElementById('ai-float');
+    var floatBtn = document.getElementById('ai-float');
     if (!floatBtn) return;
 
-    // Overlay with inline styles
-    const overlay = document.createElement('div');
+    // Create overlay
+    var overlay = document.createElement('div');
     overlay.id = 'ai-chat-overlay';
     overlay.style.cssText = 'display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.45);z-index:100000;';
 
-    // Dialog with inline styles
-    const dialog = document.createElement('div');
+    // Create dialog
+    var dialog = document.createElement('div');
     dialog.id = 'ai-chat-dialog';
     dialog.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:440px;max-width:92vw;max-height:80vh;background:#fffaf3;border-radius:16px;box-shadow:0 16px 48px rgba(0,0,0,0.3);z-index:100001;display:flex;flex-direction:column;overflow:hidden;';
 
-    // Check mobile
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) {
-      floatBtn.style.bottom = '120px';
-      floatBtn.style.right = '14px';
-      dialog.style.width = '94vw';
-      dialog.style.maxHeight = '85vh';
-    }
+    var isMobile = window.innerWidth < 768;
+    if (isMobile) { dialog.style.width = '94vw'; dialog.style.maxHeight = '85vh'; }
 
-    dialog.innerHTML =
-      '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;flex-shrink:0">' +
-        '<div style="display:flex;align-items:center;gap:10px">' +
-          '<span style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:1.1rem">🤖</span>' +
-          '<div><strong style="font-size:0.9rem">AI 学习助手</strong><small id="ai-status" style="font-size:10px;opacity:0.75;display:block">DeepSeek · 未连接</small></div>' +
-        '</div>' +
-        '<div style="display:flex;gap:4px">' +
-          '<button id="ai-settings-btn" style="width:28px;height:28px;border-radius:50%;font-size:0.85rem;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;background:rgba(255,255,255,0.1);border:none" title="设置Key">⚙️</button>' +
-          '<button id="ai-new-btn" style="width:28px;height:28px;border-radius:50%;font-size:0.85rem;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;background:rgba(255,255,255,0.1);border:none" title="新建">+</button>' +
-          '<button id="ai-close-btn" style="width:28px;height:28px;border-radius:50%;font-size:0.85rem;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;background:rgba(255,255,255,0.1);border:none" title="关闭">✕</button>' +
-        '</div>' +
-      '</div>' +
-      '<div id="ai-settings-bar" style="display:none;gap:6px;padding:8px 14px;background:#f8f5ff;border-bottom:1px solid #e8e0f0;align-items:center;flex-shrink:0">' +
-        '<input type="password" id="ai-api-key" placeholder="粘贴 DeepSeek API Key (sk-...)" autocomplete="off" style="flex:1;padding:6px 10px;border:1px solid #ddd6f0;border-radius:6px;font-size:11px;outline:none">' +
-        '<button id="ai-save-key" style="padding:6px 12px;border-radius:6px;font-size:11px;background:#6366f1;color:#fff;border:none;cursor:pointer;white-space:nowrap">保存</button>' +
-        '<a href="https://platform.deepseek.com/api_keys" target="_blank" style="font-size:10px;color:#6366f1;white-space:nowrap">获取Key →</a>' +
-      '</div>' +
-      '<div id="ai-msg-body" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;background:#fdf6ee;min-height:120px">' +
-        '<div style="text-align:center;padding:20px 10px;margin:auto">' +
-          '<div style="font-size:2.8rem;margin-bottom:8px">🤖</div>' +
-          '<h3 style="font-size:1rem;margin-bottom:4px">有什么可以帮你的？</h3>' +
-          '<p style="font-size:0.8rem;color:#9b8a7a;margin-bottom:12px">AI学习助手，解答医学影像学和卫生法学问题</p>' +
-          '<div id="ai-suggestions" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center"></div>' +
-        '</div>' +
-      '</div>' +
-      '<div style="display:flex;gap:8px;padding:10px 14px;border-top:1px solid #e8dccf;background:#fff;align-items:center;flex-shrink:0">' +
-        '<input type="text" id="ai-chat-input" placeholder="输入问题，回车发送..." autocomplete="off" style="flex:1;padding:10px 14px;border:1.5px solid #e8dccf;border-radius:20px;font-size:0.85rem;background:#fdf6ee;outline:none">' +
-        '<button id="ai-send-btn" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:1rem;border:none;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center">↑</button>' +
-      '</div>';
+    // Build dialog HTML
+    var html = '';
+    html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;flex-shrink:0">';
+    html += '<div style="display:flex;align-items:center;gap:10px"><span style="width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:1.1rem">🤖</span><div><strong style="font-size:0.9rem">AI 学习助手</strong><small id="ai-status" style="font-size:10px;opacity:0.75;display:block">DeepSeek 未连接</small></div></div>';
+    html += '<div style="display:flex;gap:4px">';
+    html += '<button id="ai-new-btn" style="width:28px;height:28px;border-radius:50%;font-size:0.85rem;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;background:rgba(255,255,255,0.1);border:none" title="新建对话">+</button>';
+    html += '<button id="ai-close-btn" style="width:28px;height:28px;border-radius:50%;font-size:0.85rem;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;background:rgba(255,255,255,0.1);border:none" title="关闭">✕</button>';
+    html += '</div></div>';
 
+    html += '<div id="ai-settings-bar" style="display:none;gap:6px;padding:8px 14px;background:#f8f5ff;border-bottom:1px solid #e8e0f0;align-items:center;flex-shrink:0">';
+    html += '<input type="password" id="ai-api-key" placeholder="sk-..." autocomplete="off" style="flex:1;padding:6px 10px;border:1px solid #ddd6f0;border-radius:6px;font-size:11px;outline:none">';
+    html += '<button id="ai-save-key" style="padding:6px 12px;border-radius:6px;font-size:11px;background:#6366f1;color:#fff;border:none;cursor:pointer;white-space:nowrap">保存</button>';
+    html += '<a href="https://platform.deepseek.com/api_keys" target="_blank" style="font-size:10px;color:#6366f1;white-space:nowrap;margin-left:4px">获取Key →</a>';
+    html += '</div>';
+
+    html += '<div id="ai-msg-body" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;background:#fdf6ee;min-height:120px">';
+    html += '<div style="text-align:center;padding:20px 10px;margin:auto"><div style="font-size:2.8rem;margin-bottom:8px">🤖</div><h3 style="font-size:1rem;margin-bottom:4px">有什么可以帮你的？</h3><p style="font-size:0.8rem;color:#9b8a7a;margin-bottom:12px">AI学习助手，解答医学影像学和卫生法学问题</p><div id="ai-suggestions" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center"></div></div>';
+    html += '</div>';
+
+    html += '<div style="display:flex;gap:8px;padding:10px 14px;border-top:1px solid #e8dccf;background:#fff;align-items:center;flex-shrink:0">';
+    html += '<input type="text" id="ai-chat-input" placeholder="输入问题，回车发送..." autocomplete="off" style="flex:1;padding:10px 14px;border:1.5px solid #e8dccf;border-radius:20px;font-size:0.85rem;background:#fdf6ee;outline:none">';
+    html += '<button id="ai-send-btn" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:1rem;border:none;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center">↑</button>';
+    html += '</div>';
+
+    dialog.innerHTML = html;
     overlay.appendChild(dialog);
     document.body.appendChild(overlay);
 
-    // Get refs
-    const msgBody = dialog.querySelector('#ai-msg-body');
-    const input = dialog.querySelector('#ai-chat-input');
-    const statusEl = dialog.querySelector('#ai-status');
-    const settingsBar = dialog.querySelector('#ai-settings-bar');
-    const apiKeyInput = dialog.querySelector('#ai-api-key');
-    const suggestionsEl = dialog.querySelector('#ai-suggestions');
+    // Get refs after adding to DOM
+    var msgBody = document.getElementById('ai-msg-body');
+    var input = document.getElementById('ai-chat-input');
+    var statusEl = document.getElementById('ai-status');
+    var settingsBar = document.getElementById('ai-settings-bar');
+    var apiKeyInput = document.getElementById('ai-api-key');
+    var suggestionsEl = document.getElementById('ai-suggestions');
 
-    let chatHistory = [];
-    const sysPrompt = '你是专业医学复习助手。回答简洁、条理清晰、中文。疾病：临床特点、影像表现（X线/CT/MRI/超声分点）、鉴别诊断。法律：依据和要点。';
+    var chatHistory = [];
+    var sysPrompt = '你是专业医学复习助手。回答简洁、条理清晰、中文。疾病：列出临床特点、影像表现(X线/CT/MRI/超声分点)、鉴别诊断。法律：列出依据和要点。';
 
-    const md2html = (t) => {
-      let h = t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    function md2html(t) {
+      var h = t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
       h = h.replace(/`([^`]+)`/g,'<code>$1</code>').replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
       h = h.replace(/^- (.+)$/gm,'<li>$1</li>').replace(/^(\d+)\. (.+)$/gm,'<li>$2</li>');
       h = h.replace(/((?:<li>.*<\/li>\s*)+)/g,'<ul>$1</ul>');
       return '<p>'+h.replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>')+'</p>';
-    };
+    }
 
-    const getKey = () => (apiKeyInput&&apiKeyInput.value.trim()) || localStorage.getItem('medreview_apikey') || '';
-    const updStatus = () => { statusEl.textContent = 'DeepSeek · ' + (getKey()?'已连接':'未连接'); };
+    function getKey() { return (apiKeyInput&&apiKeyInput.value.trim()) || localStorage.getItem('medreview_apikey') || ''; }
+    function updStatus() { statusEl.textContent = 'DeepSeek ' + (getKey()?'已连接':'未连接'); }
     if (getKey()) { apiKeyInput.value = getKey(); updStatus(); }
 
-    const sugs = ['肝癌CT表现和鉴别','硬膜外vs硬膜下血肿','肺结核分型及X线','医疗事故分几级','大叶性肺炎影像'];
-    suggestionsEl.innerHTML = sugs.map(s => '<button style="padding:6px 13px;border-radius:15px;font-size:11px;background:#fffaf3;border:1px solid #e8dccf;color:#6b5a4a;cursor:pointer">'+s+'</button>').join('');
+    var sugs = ['肝癌CT表现和鉴别','硬膜外vs硬膜下血肿','肺结核分型及X线','医疗事故分几级','大叶性肺炎影像'];
+    suggestionsEl.innerHTML = sugs.map(function(s){return '<button style="padding:6px 13px;border-radius:15px;font-size:11px;background:#fffaf3;border:1px solid #e8dccf;color:#6b5a4a;cursor:pointer">'+s+'</button>';}).join('');
 
-    const addMsg = (role, text) => {
-      const row = document.createElement('div');
-      row.style.cssText = 'display:flex;gap:8px;align-items:flex-start;' + (role==='user'?'flex-direction:row-reverse':'');
-      const av = document.createElement('div');
-      av.style.cssText = 'width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.75rem;' + (role==='user'?'background:#e8c9a8':'background:#e8e0f0');
+    function addMsg(role, text) {
+      var row = document.createElement('div');
+      row.style.cssText = 'display:flex;gap:8px;align-items:flex-start;'+(role==='user'?'flex-direction:row-reverse':'');
+      var av = document.createElement('div');
+      av.style.cssText = 'width:26px;height:26px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:0.75rem;'+(role==='user'?'background:#e8c9a8':'background:#e8e0f0');
       av.textContent = role==='user'?'👤':'🤖'; row.appendChild(av);
-      const bub = document.createElement('div');
-      bub.style.cssText = 'padding:8px 13px;border-radius:15px;font-size:0.82rem;line-height:1.6;max-width:78%;word-break:break-word;position:relative;' + (role==='user'?'background:#6366f1;color:#fff;border-bottom-right-radius:4px':'background:#fff;border:1px solid #e8dccf;border-bottom-left-radius:4px');
-      if (role==='assistant') {
-        bub.innerHTML = md2html(text);
-        const cp = document.createElement('button');
-        cp.style.cssText = 'position:absolute;top:3px;right:3px;width:20px;height:20px;border-radius:3px;display:none;align-items:center;justify-content:center;font-size:9px;background:rgba(0,0,0,0.05);border:none;cursor:pointer';
-        cp.textContent = '📋';
-        cp.addEventListener('click',()=>{navigator.clipboard.writeText(text).then(()=>{cp.textContent='✓';setTimeout(()=>cp.textContent='📋',1500)})});
-        bub.appendChild(cp);
-        bub.addEventListener('mouseenter',()=>cp.style.display='flex');
-        bub.addEventListener('mouseleave',()=>cp.style.display='none');
-      } else { bub.textContent = text; }
+      var bub = document.createElement('div');
+      bub.style.cssText = 'padding:8px 13px;border-radius:15px;font-size:0.82rem;line-height:1.6;max-width:78%;word-break:break-word;position:relative;'+(role==='user'?'background:#6366f1;color:#fff;border-bottom-right-radius:4px':'background:#fff;border:1px solid #e8dccf;border-bottom-left-radius:4px');
+      if (role==='assistant') { bub.innerHTML = md2html(text); }
+      else { bub.textContent = text; }
       row.appendChild(bub); msgBody.appendChild(row); msgBody.scrollTop = msgBody.scrollHeight;
-    };
+    }
 
-    const showTyping = () => {
-      const d = document.createElement('div'); d.style.cssText = 'display:flex;gap:3px;padding:10px 16px';
-      d.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#9b8a7a;display:inline-block;animation:aiBounce 1.4s infinite"></span><span style="width:6px;height:6px;border-radius:50%;background:#9b8a7a;display:inline-block;animation:aiBounce 1.4s 0.2s infinite"></span><span style="width:6px;height:6px;border-radius:50%;background:#9b8a7a;display:inline-block;animation:aiBounce 1.4s 0.4s infinite"></span>';
+    function showTyping() {
+      var d = document.createElement('div'); d.style.cssText = 'display:flex;gap:3px;padding:10px 16px';
+      d.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#9b8a7a;display:inline-block"></span><span style="width:6px;height:6px;border-radius:50%;background:#9b8a7a;display:inline-block"></span><span style="width:6px;height:6px;border-radius:50%;background:#9b8a7a;display:inline-block"></span>';
       msgBody.appendChild(d); msgBody.scrollTop = msgBody.scrollHeight;
-    };
-    const hideTyping = () => { const e = msgBody.querySelector(':scope > div:last-child'); if (e && e.querySelector('span[style*=animation]')) e.remove(); };
+    }
+    function hideTyping() { var kids = msgBody.children; if (kids.length>0) { var last = kids[kids.length-1]; if (last.querySelectorAll('span').length===3 && !last.textContent.trim()) last.remove(); } }
 
-    const send = async (q) => {
-      const key = getKey();
-      if (!key) { settingsBar.style.display = 'flex'; addMsg('system','请设置DeepSeek API Key。点击⚙️，粘贴Key后保存。'); return; }
+    async function sendAI(q) {
+      var key = getKey();
+      if (!key) { settingsBar.style.display='flex'; addMsg('system','请先设置API Key。点击上方🔑按钮，或在此输入Key后保存。'); return; }
       if (!q.trim()) return;
-      const w = msgBody.querySelector('[style*=text-align:center]'); if (w) w.style.display = 'none';
+      var w = msgBody.querySelector('[style*=\"text-align:center\"]'); if(w) w.style.display='none';
       addMsg('user', q); chatHistory.push({role:'user',content:q}); showTyping();
-      const msgs = [{role:'system',content:sysPrompt}, ...chatHistory.slice(-8)];
+      var msgs = [{role:'system',content:sysPrompt}].concat(chatHistory.slice(-8));
       try {
-        const res = await fetch('https://api.deepseek.com/v1/chat/completions',{
-          method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
-          body:JSON.stringify({model:'deepseek-chat',messages:msgs,temperature:0.7,max_tokens:1000})
-        });
+        var res = await fetch('https://api.deepseek.com/v1/chat/completions',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},body:JSON.stringify({model:'deepseek-chat',messages:msgs,temperature:0.7,max_tokens:1000})});
         hideTyping();
-        if (!res.ok) { const err = await res.json().catch(()=>({})); addMsg('system','失败：'+(err.error?.message||res.statusText)); return; }
-        const data = await res.json(); const reply = data.choices?.[0]?.message?.content||'';
+        if (!res.ok) { var err = await res.json().catch(function(){return {};}); addMsg('system','失败：'+(err.error?err.error.message:res.statusText)); return; }
+        var data = await res.json(); var reply = data.choices[0].message.content||'';
         addMsg('assistant', reply); chatHistory.push({role:'assistant',content:reply});
-      } catch (e) { hideTyping(); addMsg('system','网络错误：'+e.message); }
-    };
+      } catch(e) { hideTyping(); addMsg('system','网络错误：'+e.message); }
+    }
 
-    // Events
-    floatBtn.addEventListener('click', () => { overlay.style.display = 'block'; input.focus(); });
-    dialog.querySelector('#ai-close-btn').addEventListener('click', () => overlay.style.display = 'none');
-    dialog.querySelector('#ai-new-btn').addEventListener('click', () => {
+    // Bind events
+    floatBtn.addEventListener('click', function(){ overlay.style.display='block'; setTimeout(function(){input.focus();},100); });
+    document.getElementById('ai-close-btn').addEventListener('click', function(){ overlay.style.display='none'; });
+    document.getElementById('ai-new-btn').addEventListener('click', function(){
       chatHistory = []; msgBody.innerHTML = '<div style="text-align:center;padding:20px 10px;margin:auto"><div style="font-size:2.8rem;margin-bottom:8px">🤖</div><h3 style="font-size:1rem;margin-bottom:4px">有什么可以帮你的？</h3><p style="font-size:0.8rem;color:#9b8a7a;margin-bottom:12px">AI学习助手</p><div id="ai-suggestions-new" style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center"></div></div>';
-      const ns = msgBody.querySelector('#ai-suggestions-new');
-      if (ns) { ns.innerHTML = sugs.map(s => '<button style="padding:6px 13px;border-radius:15px;font-size:11px;background:#fffaf3;border:1px solid #e8dccf;color:#6b5a4a;cursor:pointer">'+s+'</button>').join(''); ns.addEventListener('click', e => { if (e.target.tagName==='BUTTON') send(e.target.textContent); }); }
+      var ns = document.getElementById('ai-suggestions-new');
+      if(ns) { ns.innerHTML = sugs.map(function(s){return '<button style="padding:6px 13px;border-radius:15px;font-size:11px;background:#fffaf3;border:1px solid #e8dccf;color:#6b5a4a;cursor:pointer">'+s+'</button>';}).join(''); ns.addEventListener('click', function(e){ if(e.target.tagName==='BUTTON') sendAI(e.target.textContent); }); }
     });
-    dialog.querySelector('#ai-settings-btn').addEventListener('click', () => { const s = settingsBar.style.display; settingsBar.style.display = s==='flex'?'none':'flex'; if (settingsBar.style.display==='flex') apiKeyInput.focus(); });
-    dialog.querySelector('#ai-save-key').addEventListener('click', () => { const v = apiKeyInput.value.trim(); if (v) { localStorage.setItem('medreview_apikey',v); updStatus(); settingsBar.style.display='none'; } });
-    dialog.querySelector('#ai-send-btn').addEventListener('click', () => { const q = input.value; input.value=''; send(q); });
-    input.addEventListener('keydown', e => { if (e.key==='Enter') { e.preventDefault(); const q = input.value; input.value=''; send(q); } });
-    suggestionsEl.addEventListener('click', e => { if (e.target.tagName==='BUTTON') send(e.target.textContent); });
-    overlay.addEventListener('click', e => { if (e.target===overlay) overlay.style.display='none'; });
-    document.addEventListener('keydown', e => { if (e.key==='Escape') overlay.style.display='none'; });
-    window.addEventListener('resize', () => {
-      const m = window.innerWidth < 768;
-      floatBtn.style.bottom = '120px';
-      floatBtn.style.right = m ? '14px' : '20px';
-      dialog.style.width = m ? '94vw' : '440px';
-      dialog.style.maxHeight = m ? '85vh' : '80vh';
-    });
+    document.getElementById('ai-save-key').addEventListener('click', function(){ var v=apiKeyInput.value.trim(); if(v){ localStorage.setItem('medreview_apikey',v); updStatus(); settingsBar.style.display='none'; } });
+    document.getElementById('ai-send-btn').addEventListener('click', function(){ var q=input.value; input.value=''; sendAI(q); });
+    input.addEventListener('keydown', function(e){ if(e.key==='Enter'){ e.preventDefault(); var q=input.value; input.value=''; sendAI(q); } });
+    suggestionsEl.addEventListener('click', function(e){ if(e.target.tagName==='BUTTON') sendAI(e.target.textContent); });
+    overlay.addEventListener('click', function(e){ if(e.target===overlay) overlay.style.display='none'; });
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape') overlay.style.display='none'; });
 
-    this._askAI = (q) => { overlay.style.display='block'; send(q); };
+    // 🔑 Key buttons in sidebar/bottom-nav
+    var keyBtns = document.querySelectorAll('[id^=\"ai-key-btn\"]');
+    for (var i=0; i<keyBtns.length; i++) {
+      keyBtns[i].addEventListener('click', function(){
+        overlay.style.display = 'block';
+        settingsBar.style.display = 'flex';
+        apiKeyInput.focus();
+      });
+    }
+
+    this._askAI = function(q){ overlay.style.display='block'; sendAI(q); };
     updStatus();
   },
 
