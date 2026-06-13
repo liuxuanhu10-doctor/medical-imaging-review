@@ -918,14 +918,17 @@ html.font-lg { font-size: 17px; }
 
 /* ----- AI Dialog ----- */
 .ai-overlay {
-  display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,0.5); z-index: 500;
-  justify-content: center; align-items: center;
+  display: none;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5); z-index: 9999;
   padding: 20px;
 }
-.ai-overlay.open { display: flex; }
+.ai-overlay.open { display: block; }
 
 .ai-dialog {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
   width: 100%; max-width: 680px; height: 85vh; max-height: 700px;
   background: var(--card-bg); border-radius: 16px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.25);
@@ -1068,8 +1071,14 @@ html.font-lg { font-size: 17px; }
 .ai-float-btn.has-key { animation: none; }
 
 @media (max-width: 767px) {
-  .ai-overlay { padding: 0; align-items: flex-end; }
-  .ai-dialog { max-width: 100%; height: 90vh; max-height: none; border-radius: 16px 16px 0 0; }
+  .ai-overlay { padding: 0; }
+  .ai-dialog {
+    position: absolute;
+    top: auto; bottom: 0; left: 0; right: 0;
+    transform: none;
+    max-width: 100%; height: 85vh; max-height: none;
+    border-radius: 16px 16px 0 0;
+  }
   .ai-float-btn { bottom: calc(var(--bottom-nav-height) + 72px); right: 14px; width: 46px; height: 46px; font-size: 1.2rem; }
   .ai-msg-bubble { max-width: 85%; }
 }
