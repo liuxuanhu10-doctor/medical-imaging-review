@@ -774,7 +774,27 @@ ul, ol { list-style: none; }
 }
 .topic-bookmark-btn:hover,
 .topic-bookmark-btn.bookmarked { opacity: 1; transform: scale(1.15); }
-.topic-header .topic-title.done-text { text-decoration: line-through; opacity: 0.6; }
+/* Keyword highlight mode */
+.highlight-on .topic-content {
+  /* Base unchanged, highlights applied via JS span tags */
+}
+.kw-xray { background: #fde8d0; color: #b8731f; padding: 1px 3px; border-radius: 2px; font-weight: 600; }
+.kw-ct { background: #d0e4f5; color: #2b6fa0; padding: 1px 3px; border-radius: 2px; font-weight: 600; }
+.kw-mri { background: #d0f0e0; color: #3b7d5a; padding: 1px 3px; border-radius: 2px; font-weight: 600; }
+.kw-us { background: #e8d0f5; color: #7b3d9a; padding: 1px 3px; border-radius: 2px; font-weight: 600; }
+.kw-dsa { background: #f5d0d0; color: #a02b2b; padding: 1px 3px; border-radius: 2px; font-weight: 600; }
+.kw-sign { background: #fff3cd; color: #856404; padding: 1px 3px; border-radius: 2px; font-weight: 600; }
+
+/* Font size classes */
+html.font-sm { font-size: 13px; }
+html.font-md { font-size: 15px; }
+html.font-lg { font-size: 17px; }
+
+@media (min-width: 768px) {
+  html.font-sm { font-size: 14px; }
+  html.font-md { font-size: 16px; }
+  html.font-lg { font-size: 18px; }
+}
 .topic-content.done-content { opacity: 0.5; }
 
 .topic-header .topic-badge {

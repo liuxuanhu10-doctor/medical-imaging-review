@@ -9,15 +9,26 @@ const App = {
   currentFocusPath: null,
   _lastQuery: '',
   bookmarks: new Set(),
+  highlightOn: false,
+  fontSize: 'md',
 
   async init() {
     await this._loadCourseIndex();
     this._loadBookmarks();
+    this._loadPrefs();
     this._bindNav();
     this._initTheme();
     this._initBackToTop();
     this._handleRoute();
     window.addEventListener('hashchange', () => this._handleRoute());
+  },
+
+  _loadPrefs() {
+    this.highlightOn = localStorage.getItem('medreview_highlight') === 'on';
+    this.fontSize = localStorage.getItem('medreview_fontsize') || 'md';
+    if (this.fontSize !== 'md') {
+      document.documentElement.classList.add('font-' + this.fontSize);
+    }
   },
 
   _loadBookmarks() {
@@ -601,11 +612,17 @@ const App = {
     const container = document.getElementById('topic-actions');
     if (!container) return;
     const showBookmarks = this.bookmarks.size > 0;
+    const hlLabel = this.highlightOn ? '🔆 取消高亮' : '🖍 关键词高亮';
+    const fsLabels = { sm: 'A-', md: 'A', lg: 'A+' };
+    const nextFs = { sm: 'md', md: 'lg', lg: 'sm' };
+
     container.innerHTML = `
-      <button class="btn-sm" id="btn-expand-all">📂 全部展开</button>
-      <button class="btn-sm" id="btn-collapse-all">📁 全部收缩</button>
-      ${this.currentFocusId ? '<button class="btn-sm" id="btn-clear-focus">📋 显示全部</button>' : ''}
-      ${showBookmarks ? '<button class="btn-sm" id="btn-show-bookmarks">⭐ 只看收藏</button>' : ''}
+      <button class="btn-sm" id="btn-expand-all">📂 展开</button>
+      <button class="btn-sm" id="btn-collapse-all">📁 收缩</button>
+      <button class="btn-sm" id="btn-toggle-highlight">${hlLabel}</button>
+      <button class="btn-sm" id="btn-font-size">${fsLabels[this.fontSize]}</button>
+      ${this.currentFocusId ? '<button class="btn-sm" id="btn-clear-focus">📋 全部</button>' : ''}
+      ${showBookmarks ? '<button class="btn-sm" id="btn-show-bookmarks">⭐ 收藏</button>' : ''}
     `;
 
     document.getElementById('btn-expand-all').onclick = () => {
@@ -613,6 +630,24 @@ const App = {
     };
     document.getElementById('btn-collapse-all').onclick = () => {
       document.querySelectorAll('.topic-node').forEach((n) => n.classList.remove('expanded'));
+    };
+
+    document.getElementById('btn-toggle-highlight').onclick = () => {
+      this.highlightOn = !this.highlightOn;
+      localStorage.setItem('medreview_highlight', this.highlightOn ? 'on' : 'off');
+      // Re-render to apply/remove highlights
+      const tree = document.getElementById('topic-tree');
+      if (tree) tree.classList.toggle('highlight-on', this.highlightOn);
+      this._applyHighlights();
+      this._renderTopicActions();
+    };
+
+    document.getElementById('btn-font-size').onclick = () => {
+      this.fontSize = nextFs[this.fontSize];
+      document.documentElement.className = document.documentElement.className.replace(/font-\w+/g, '');
+      if (this.fontSize !== 'md') document.documentElement.classList.add('font-' + this.fontSize);
+      localStorage.setItem('medreview_fontsize', this.fontSize);
+      this._renderTopicActions();
     };
 
     if (this.currentFocusId) {
@@ -629,6 +664,45 @@ const App = {
         this._showBookmarksModal();
       };
     }
+  },
+
+  _applyHighlights() {
+    if (!this.highlightOn) return;
+    const tree = document.getElementById('topic-tree');
+    if (!tree) return;
+
+    const keywords = [
+      { re: /(X线(?:表现|平片|摄影|检查|透视|造影)?)/g, cls: 'kw-xray' },
+      { re: /(CT(?:表现|平扫|增强|检查|扫描|值|A|M|VE|PI)?)/g, cls: 'kw-ct' },
+      { re: /(MRI(?:表现|检查|增强|扫描)?|MR(?:表现|检查|A|CP|U|M|S|H))/g, cls: 'kw-mri' },
+      { re: /(超声(?:表现|检查|诊断|成像|造影|弹性)?|CDFI)/g, cls: 'kw-us' },
+      { re: /(DSA(?:表现|检查)?)/g, cls: 'kw-dsa' },
+      { re: /((?:Codman|空气支气管|毛刺|分叶|胸膜凹陷|牛眼|快进快出|快进慢出|树芽|皮革胃|半月|环堤|跳跃|哑铃|三均匀|脑膜尾|束腰)[征象]?征)/g, cls: 'kw-sign' },
+    ];
+
+    const walk = (node) => {
+      if (node.nodeType === 3 && node.textContent.trim()) { // Text node
+        let html = node.textContent;
+        let changed = false;
+        for (const kw of keywords) {
+          if (kw.re.test(html)) {
+            html = html.replace(kw.re, `<span class="${kw.cls}">$1</span>`);
+            changed = true;
+          }
+        }
+        if (changed) {
+          const span = document.createElement('span');
+          span.innerHTML = html;
+          node.parentNode.replaceChild(span, node);
+        }
+      } else if (node.nodeType === 1 && !node.classList.contains('kw-xray') && !node.classList.contains('kw-ct') && !node.classList.contains('kw-mri') && !node.classList.contains('kw-us') && !node.classList.contains('kw-dsa') && !node.classList.contains('kw-sign')) {
+        for (const child of [...node.childNodes]) {
+          walk(child);
+        }
+      }
+    };
+
+    tree.querySelectorAll('.topic-content').forEach((el) => walk(el));
   },
 
   _showBookmarksModal() {
@@ -740,6 +814,13 @@ const App = {
         this._toggleTopicDone(cb.dataset.topicId);
       });
     });
+
+    // Apply keyword highlights if enabled
+    if (this.highlightOn) {
+      const tree = document.getElementById('topic-tree');
+      if (tree) tree.classList.add('highlight-on');
+      this._applyHighlights();
+    }
   },
 
   _renderTopics(topics, level = 0) {
