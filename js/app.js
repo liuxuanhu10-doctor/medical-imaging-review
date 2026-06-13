@@ -29,8 +29,8 @@ const App = {
     if (this.fontSize !== 'md') {
       document.documentElement.classList.add('font-' + this.fontSize);
     }
-    this._initAIChat();
-    this._initPomodoro();
+    try { this._initAIChat(); } catch(e) { console.log('AI init error:', e); }
+    try { this._initPomodoro(); } catch(e) { console.log('Pomo init error:', e); }
   },
 
   /* ===== AI Chat ===== */
