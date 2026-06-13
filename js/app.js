@@ -34,13 +34,9 @@ const App = {
 
   /* ===== AI Chat ===== */
   _initAIChat() {
-    // Float button with INLINE styles (proven to work)
-    const floatBtn = document.createElement('button');
-    floatBtn.id = 'ai-float-btn';
-    floatBtn.textContent = '🤖';
-    floatBtn.title = 'AI助手';
-    floatBtn.style.cssText = 'position:fixed;bottom:120px;right:20px;width:52px;height:52px;border-radius:50%;background:#6366f1;color:#fff;font-size:1.4rem;border:none;cursor:pointer;z-index:99999;box-shadow:0 4px 20px rgba(99,102,241,0.5);display:flex;align-items:center;justify-content:center;';
-    document.body.appendChild(floatBtn);
+    // Use the HTML-embedded float button (guaranteed visible)
+    const floatBtn = document.getElementById('ai-float');
+    if (!floatBtn) return;
 
     // Overlay with inline styles
     const overlay = document.createElement('div');
@@ -184,8 +180,10 @@ const App = {
     document.addEventListener('keydown', e => { if (e.key==='Escape') overlay.style.display='none'; });
     window.addEventListener('resize', () => {
       const m = window.innerWidth < 768;
-      floatBtn.style.bottom = m ? '120px' : '120px';
+      floatBtn.style.bottom = '120px';
       floatBtn.style.right = m ? '14px' : '20px';
+      dialog.style.width = m ? '94vw' : '440px';
+      dialog.style.maxHeight = m ? '85vh' : '80vh';
     });
 
     this._askAI = (q) => { overlay.style.display='block'; send(q); };
