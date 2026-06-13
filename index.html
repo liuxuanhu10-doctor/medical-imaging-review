@@ -77,8 +77,30 @@
     </nav>
   </div>
 
-  <!-- AI Float Button - inline, in HTML, guaranteed visible -->
+  <!-- AI Float Button -->
   <button id="ai-float" style="position:fixed;bottom:120px;right:20px;width:52px;height:52px;border-radius:50%;background:#6366f1;color:#fff;font-size:1.4rem;border:none;cursor:pointer;z-index:99999;box-shadow:0 4px 20px rgba(99,102,241,0.5);display:flex;align-items:center;justify-content:center" title="AI助手">🤖</button>
+
+  <!-- Pomodoro Timer Float Button -->
+  <button id="pomo-float" style="position:fixed;bottom:185px;right:20px;width:52px;height:52px;border-radius:50%;background:#e85d3a;color:#fff;font-size:1.3rem;border:none;cursor:pointer;z-index:99998;box-shadow:0 4px 20px rgba(232,93,58,0.45);display:flex;align-items:center;justify-content:center" title="番茄钟">🍅</button>
+  <div id="pomo-panel" style="display:none;position:fixed;bottom:190px;right:80px;width:280px;background:#fffaf3;border-radius:16px;box-shadow:0 8px 32px rgba(0,0,0,0.18);z-index:99997;padding:0;overflow:hidden">
+    <div style="padding:14px 18px;background:linear-gradient(135deg,#e85d3a,#f08060);color:#fff;display:flex;align-items:center;justify-content:space-between;font-weight:600;font-size:0.9rem">
+      <span>🍅 番茄钟</span>
+      <button id="pomo-close" style="width:26px;height:26px;border-radius:50%;font-size:0.8rem;display:flex;align-items:center;justify-content:center;color:#fff;cursor:pointer;background:rgba(255,255,255,0.15);border:none">✕</button>
+    </div>
+    <div style="text-align:center;padding:20px 16px">
+      <div style="font-size:3rem;font-weight:700;color:#3d2c1e;font-variant-numeric:tabular-nums;letter-spacing:2px" id="pomo-time">25:00</div>
+      <div style="font-size:0.8rem;color:#9b8a7a;margin-top:4px" id="pomo-label">专注时间</div>
+      <div style="display:flex;gap:8px;justify-content:center;margin-top:16px">
+        <button id="pomo-start" style="padding:10px 24px;border-radius:20px;background:#e85d3a;color:#fff;border:none;font-size:0.85rem;font-weight:600;cursor:pointer">开始</button>
+        <button id="pomo-reset" style="padding:10px 16px;border-radius:20px;background:#fdf6ee;color:#6b5a4a;border:1px solid #e8dccf;font-size:0.85rem;cursor:pointer">重置</button>
+      </div>
+      <div style="display:flex;gap:4px;justify-content:center;margin-top:12px">
+        <button class="pomo-preset" data-mins="25" style="padding:4px 10px;border-radius:12px;font-size:0.7rem;background:#e85d3a;color:#fff;border:none;cursor:pointer">25分</button>
+        <button class="pomo-preset" data-mins="45" style="padding:4px 10px;border-radius:12px;font-size:0.7rem;background:#fdf6ee;color:#6b5a4a;border:1px solid #e8dccf;cursor:pointer">45分</button>
+        <button class="pomo-preset" data-mins="15" style="padding:4px 10px;border-radius:12px;font-size:0.7rem;background:#fdf6ee;color:#6b5a4a;border:1px solid #e8dccf;cursor:pointer">15分</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     window.onerror = function(msg, url, line) {

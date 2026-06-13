@@ -30,6 +30,7 @@ const App = {
       document.documentElement.classList.add('font-' + this.fontSize);
     }
     this._initAIChat();
+    this._initPomodoro();
   },
 
   /* ===== AI Chat ===== */
@@ -167,6 +168,106 @@ const App = {
 
     this._askAI = function(q){ overlay.style.display='block'; sendAI(q); };
     updStatus();
+  },
+
+  /* ===== Pomodoro Timer ===== */
+  _initPomodoro() {
+    var floatBtn = document.getElementById('pomo-float');
+    var panel = document.getElementById('pomo-panel');
+    var timeDisplay = document.getElementById('pomo-time');
+    var labelEl = document.getElementById('pomo-label');
+    var startBtn = document.getElementById('pomo-start');
+    var resetBtn = document.getElementById('pomo-reset');
+    var closeBtn = document.getElementById('pomo-close');
+    if (!floatBtn || !panel) return;
+
+    var totalSeconds = 25 * 60;
+    var remaining = totalSeconds;
+    var isRunning = false;
+    var isWork = true;
+    var timerId = null;
+
+    function updateDisplay() {
+      var mins = Math.floor(remaining / 60);
+      var secs = remaining % 60;
+      timeDisplay.textContent = String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0');
+      document.title = (isRunning ? '▶ ' : '') + timeDisplay.textContent + ' - 医学复习助手';
+    }
+
+    function stopTimer() {
+      if (timerId) { clearInterval(timerId); timerId = null; }
+      isRunning = false;
+      startBtn.textContent = '开始';
+      startBtn.style.background = '#e85d3a';
+      document.title = '医学复习助手';
+    }
+
+    startBtn.addEventListener('click', function() {
+      if (isRunning) {
+        // Pause
+        stopTimer();
+        return;
+      }
+      // Start
+      isRunning = true;
+      startBtn.textContent = '暂停';
+      startBtn.style.background = '#f0a030';
+      timerId = setInterval(function() {
+        remaining--;
+        updateDisplay();
+        if (remaining <= 0) {
+          stopTimer();
+          var msg = isWork ? '🍅 专注时间结束！休息一下吧~' : '🔔 休息结束！开始新的专注吧~';
+          isWork = !isWork;
+          remaining = isWork ? totalSeconds : 5 * 60;
+          labelEl.textContent = isWork ? '专注时间' : '休息时间';
+          updateDisplay();
+          if (Notification && Notification.permission === 'granted') {
+            new Notification(msg);
+          } else if (Notification && Notification.permission !== 'denied') {
+            Notification.requestPermission();
+          }
+          alert(msg);
+        }
+      }, 1000);
+    });
+
+    resetBtn.addEventListener('click', function() {
+      stopTimer();
+      remaining = totalSeconds;
+      labelEl.textContent = '专注时间';
+      updateDisplay();
+    });
+
+    closeBtn.addEventListener('click', function() { panel.style.display = 'none'; });
+
+    floatBtn.addEventListener('click', function() {
+      panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    });
+
+    // Presets
+    panel.querySelectorAll('.pomo-preset').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        stopTimer();
+        totalSeconds = parseInt(btn.dataset.mins) * 60;
+        remaining = totalSeconds;
+        labelEl.textContent = '专注时间';
+        updateDisplay();
+        panel.querySelectorAll('.pomo-preset').forEach(function(b) {
+          b.style.background = '#fdf6ee'; b.style.color = '#6b5a4a'; b.style.border = '1px solid #e8dccf';
+        });
+        btn.style.background = '#e85d3a'; btn.style.color = '#fff'; btn.style.border = 'none';
+      });
+    });
+
+    // Request notification permission on first click
+    floatBtn.addEventListener('click', function() {
+      if (Notification && Notification.permission === 'default') {
+        Notification.requestPermission();
+      }
+    }, { once: true });
+
+    updateDisplay();
   },
 
   _loadBookmarks() {

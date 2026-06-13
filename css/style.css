@@ -78,6 +78,23 @@ body {
   line-height: 1.75;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
+  position: relative;
+}
+/* Subtle dot pattern overlay */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  opacity: 0.25;
+  background-image: radial-gradient(circle, var(--accent-light) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+/* All content above pattern */
+.app-container, .ai-float-btn, .ai-chat-overlay, .ai-dialog, .back-to-top, .bottom-nav { position: relative; z-index: 1; }
+.ai-float-btn { z-index: 99999; }
+#ai-chat-overlay { z-index: 100000; }
+
+@media (max-width: 767px) {
+  body::before { background-size: 20px 20px; opacity: 0.18; }
 }
 
 a { color: inherit; text-decoration: none; }
