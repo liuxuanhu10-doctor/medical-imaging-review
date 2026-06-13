@@ -80,14 +80,13 @@ const App = {
 
     // Settings toggle
     settingsBtn.addEventListener('click', () => {
-      const show = settingsBar.style.display === 'none';
-      settingsBar.style.display = show ? 'flex' : 'none';
-      if (show) apiKeyInput.focus();
+      settingsBar.classList.toggle('show');
+      if (settingsBar.classList.contains('show')) apiKeyInput.focus();
     });
 
     saveKeyBtn.addEventListener('click', () => {
       const val = apiKeyInput.value.trim();
-      if (val) { localStorage.setItem('medreview_apikey', val); updateStatus(); settingsBar.style.display = 'none'; }
+      if (val) { localStorage.setItem('medreview_apikey', val); updateStatus(); settingsBar.classList.remove('show'); }
     });
 
     // Suggestions
@@ -128,7 +127,7 @@ const App = {
 
     const send = async (q) => {
       const key = getApiKey();
-      if (!key) { settingsBar.style.display = 'flex'; apiKeyInput.focus(); renderMsg('system', '请先设置DeepSeek API Key。点击右上角⚙️按钮，粘贴Key后保存。'); return; }
+      if (!key) { settingsBar.classList.add('show'); apiKeyInput.focus(); renderMsg('system', '请先设置DeepSeek API Key。点击右上角⚙️按钮，粘贴Key后保存。'); return; }
       if (!q.trim()) return;
       clearWelcome(); renderMsg('user', q);
       chatHistory.push({ role: 'user', content: q }); showTyping();
