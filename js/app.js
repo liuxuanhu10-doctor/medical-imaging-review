@@ -163,20 +163,6 @@ const App = {
     sendBtn.addEventListener('click', () => { const q = input.value; input.value = ''; send(q); });
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); const q = input.value; input.value = ''; send(q); } });
 
-    // Restore history
-    try {
-      const saved = localStorage.getItem('medreview_chathistory');
-      if (saved) {
-        const msgs = JSON.parse(saved);
-        if (msgs.length > 0) {
-          clearWelcome();
-          msgs.forEach(m => { chatHistory.push(m); if (m.role === 'user' || m.role === 'assistant') renderMsg(m.role, m.content); });
-        }
-      }
-    } catch {}
-
-    setInterval(() => { if (chatHistory.length > 0) localStorage.setItem('medreview_chathistory', JSON.stringify(chatHistory.slice(-20))); }, 3000);
-
     this._askAI = (q) => { overlay.classList.add('open'); send(q); };
     updateStatus();
   },
