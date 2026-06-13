@@ -170,104 +170,157 @@ const App = {
     updStatus();
   },
 
+  /* ===== Live Clock ===== */
+  _initClock() {
+    function update() {
+      var now = new Date();
+      var dateStr = now.getFullYear() + '年' + (now.getMonth()+1) + '月' + now.getDate() + '日 ' + ['周日','周一','周二','周三','周四','周五','周六'][now.getDay()];
+      var timeStr = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
+      var dateEl = document.getElementById('live-date');
+      var timeEl = document.getElementById('live-time');
+      if (dateEl) dateEl.textContent = dateStr;
+      if (timeEl) timeEl.textContent = timeStr;
+    }
+    update();
+    setInterval(update, 1000);
+  },
+
   /* ===== Pomodoro Timer ===== */
   _initPomodoro() {
     var floatBtn = document.getElementById('pomo-float');
     var panel = document.getElementById('pomo-panel');
     var timeDisplay = document.getElementById('pomo-time');
     var labelEl = document.getElementById('pomo-label');
+    var cycleEl = document.getElementById('pomo-cycle');
+    var titleEl = document.getElementById('pomo-title');
     var startBtn = document.getElementById('pomo-start');
     var resetBtn = document.getElementById('pomo-reset');
     var closeBtn = document.getElementById('pomo-close');
+    var workInput = document.getElementById('pomo-work-mins');
+    var breakInput = document.getElementById('pomo-break-mins');
+    var autoCB = document.getElementById('pomo-auto');
     if (!floatBtn || !panel) return;
 
-    var totalSeconds = 25 * 60;
-    var remaining = totalSeconds;
+    var workSecs = parseInt(workInput.value) * 60;
+    var breakSecs = parseInt(breakInput.value) * 60;
+    var remaining = workSecs;
     var isRunning = false;
     var isWork = true;
     var timerId = null;
+    var cycleCount = 0;
+
+    function getWorkSecs() { return parseInt(workInput.value) * 60; }
+    function getBreakSecs() { return parseInt(breakInput.value) * 60; }
 
     function updateDisplay() {
-      var mins = Math.floor(remaining / 60);
-      var secs = remaining % 60;
-      timeDisplay.textContent = String(mins).padStart(2,'0') + ':' + String(secs).padStart(2,'0');
-      document.title = (isRunning ? '▶ ' : '') + timeDisplay.textContent + ' - 医学复习助手';
+      var m = Math.floor(remaining / 60); var s = remaining % 60;
+      timeDisplay.textContent = String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+      var prefix = isRunning ? (isWork ? '▶ ' : '☕ ') : '';
+      document.title = prefix + timeDisplay.textContent + ' - 医学复习助手';
+      if (isRunning) {
+        titleEl.textContent = isWork ? '专注中' : '休息中';
+        labelEl.textContent = isWork ? '保持专注！' : '放松一下~';
+      }
+      floatBtn.textContent = isRunning ? (isWork ? '🍅' : '☕') : '🍅';
+      floatBtn.style.background = isRunning ? (isWork ? '#e85d3a' : '#4CAF50') : '#e85d3a';
+    }
+
+    function updateCycle() {
+      if (cycleCount > 0) cycleEl.textContent = '已完成 ' + cycleCount + ' 个番茄';
+      else cycleEl.textContent = '';
     }
 
     function stopTimer() {
       if (timerId) { clearInterval(timerId); timerId = null; }
       isRunning = false;
-      startBtn.textContent = '开始';
+      startBtn.textContent = '开始专注';
       startBtn.style.background = '#e85d3a';
       document.title = '医学复习助手';
+      floatBtn.textContent = '🍅';
+      floatBtn.style.background = '#e85d3a';
+      titleEl.textContent = '专注';
+      labelEl.textContent = '准备开始';
     }
 
-    startBtn.addEventListener('click', function() {
-      if (isRunning) {
-        // Pause
-        stopTimer();
-        return;
-      }
-      // Start
+    function startCountdown() {
       isRunning = true;
       startBtn.textContent = '暂停';
       startBtn.style.background = '#f0a030';
+      updateDisplay();
       timerId = setInterval(function() {
         remaining--;
         updateDisplay();
         if (remaining <= 0) {
-          stopTimer();
-          var msg = isWork ? '🍅 专注时间结束！休息一下吧~' : '🔔 休息结束！开始新的专注吧~';
-          isWork = !isWork;
-          remaining = isWork ? totalSeconds : 5 * 60;
-          labelEl.textContent = isWork ? '专注时间' : '休息时间';
-          updateDisplay();
-          if (Notification && Notification.permission === 'granted') {
-            new Notification(msg);
-          } else if (Notification && Notification.permission !== 'denied') {
-            Notification.requestPermission();
+          clearInterval(timerId); timerId = null; isRunning = false;
+          if (isWork) {
+            cycleCount++;
+            updateCycle();
+            var msg = '专注结束！休息 ' + getBreakSecs()/60 + ' 分钟吧~';
+            labelEl.textContent = '时间到！休息一下';
+            notify(msg);
+            if (autoCB.checked) {
+              // Auto start break
+              isWork = false; remaining = getBreakSecs();
+              setTimeout(function() { labelEl.textContent = '休息开始'; updateDisplay(); startCountdown(); }, 1000);
+            } else {
+              stopTimer(); isWork = false; remaining = getBreakSecs();
+            }
+          } else {
+            var msg2 = '休息结束！开始新的专注~';
+            labelEl.textContent = '时间到！准备专注';
+            notify(msg2);
+            if (autoCB.checked) {
+              isWork = true; remaining = getWorkSecs();
+              setTimeout(function() { labelEl.textContent = '专注开始'; updateDisplay(); startCountdown(); }, 1000);
+            } else {
+              stopTimer(); isWork = true; remaining = getWorkSecs();
+            }
           }
-          alert(msg);
+          updateDisplay();
         }
       }, 1000);
+    }
+
+    function notify(msg) {
+      if (Notification && Notification.permission === 'granted') { new Notification('🍅 番茄钟', { body: msg }); }
+      alert(msg);
+    }
+
+    // Reset durations from inputs
+    function applyDurations() {
+      workSecs = getWorkSecs(); breakSecs = getBreakSecs();
+      if (!isRunning) { remaining = workSecs; isWork = true; updateDisplay(); labelEl.textContent = '准备开始'; }
+    }
+
+    startBtn.addEventListener('click', function() {
+      if (isRunning) { stopTimer(); return; }
+      if (!isWork && !autoCB.checked) { isWork = true; remaining = getWorkSecs(); labelEl.textContent = '专注开始'; }
+      else if (!isRunning && !isWork) { isWork = true; remaining = getWorkSecs(); }
+      startCountdown();
     });
 
     resetBtn.addEventListener('click', function() {
-      stopTimer();
-      remaining = totalSeconds;
-      labelEl.textContent = '专注时间';
+      stopTimer(); isWork = true; remaining = getWorkSecs(); cycleCount = 0;
+      labelEl.textContent = '准备开始'; cycleEl.textContent = ''; titleEl.textContent = '专注';
       updateDisplay();
     });
 
     closeBtn.addEventListener('click', function() { panel.style.display = 'none'; });
-
     floatBtn.addEventListener('click', function() {
       panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+      applyDurations();
     });
 
-    // Presets
-    panel.querySelectorAll('.pomo-preset').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        stopTimer();
-        totalSeconds = parseInt(btn.dataset.mins) * 60;
-        remaining = totalSeconds;
-        labelEl.textContent = '专注时间';
-        updateDisplay();
-        panel.querySelectorAll('.pomo-preset').forEach(function(b) {
-          b.style.background = '#fdf6ee'; b.style.color = '#6b5a4a'; b.style.border = '1px solid #e8dccf';
-        });
-        btn.style.background = '#e85d3a'; btn.style.color = '#fff'; btn.style.border = 'none';
-      });
-    });
+    workInput.addEventListener('change', applyDurations);
+    breakInput.addEventListener('change', applyDurations);
 
-    // Request notification permission on first click
-    floatBtn.addEventListener('click', function() {
-      if (Notification && Notification.permission === 'default') {
-        Notification.requestPermission();
-      }
-    }, { once: true });
+    // Notification permission
+    if (Notification && Notification.permission === 'default') {
+      floatBtn.addEventListener('click', function() { Notification.requestPermission(); }, { once: true });
+    }
 
     updateDisplay();
+    this._initClock();
   },
 
   _loadBookmarks() {
